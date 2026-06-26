@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-26T00:00:00Z",
+  "title": "Design System: Step Shine Works",
+  "extensions": {
+    "colorMeta": {
+      "deep-ink":        { "role": "primary",  "displayName": "Deep Ink",        "canonical": "#111827", "tonalRamp": ["#030712","#111827","#1F2937","#374151","#4B5563","#6B7280","#9CA3AF","#D1D5DB"] },
+      "workshop-canvas": { "role": "neutral",  "displayName": "Workshop Canvas", "canonical": "#F9FAFB", "tonalRamp": ["#111827","#374151","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F3F4F6","#F9FAFB"] },
+      "clean-bench":     { "role": "neutral",  "displayName": "Clean Bench",     "canonical": "#FFFFFF", "tonalRamp": ["#111827","#374151","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F3F4F6","#FFFFFF"] },
+      "shelf-divider":   { "role": "neutral",  "displayName": "Shelf Divider",   "canonical": "#F3F4F6", "tonalRamp": ["#111827","#374151","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F3F4F6","#F9FAFB"] },
+      "hairline":        { "role": "neutral",  "displayName": "Hairline",        "canonical": "#E5E7EB", "tonalRamp": ["#111827","#374151","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F3F4F6","#F9FAFB"] },
+      "chalk-trace":     { "role": "neutral",  "displayName": "Chalk Trace",     "canonical": "#9CA3AF", "tonalRamp": ["#111827","#374151","#4B5563","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F9FAFB"] },
+      "worn-leather":    { "role": "neutral",  "displayName": "Worn Leather",    "canonical": "#6B7280", "tonalRamp": ["#111827","#1F2937","#374151","#4B5563","#6B7280","#9CA3AF","#D1D5DB","#F3F4F6"] },
+      "clean-receipt":   { "role": "tertiary", "displayName": "Clean Receipt",   "canonical": "#15803D", "tonalRamp": ["#052E16","#14532D","#166534","#15803D","#16A34A","#22C55E","#86EFAC","#DCFCE7"] },
+      "caution-tan":     { "role": "tertiary", "displayName": "Caution Tan",     "canonical": "#B45309", "tonalRamp": ["#431407","#7C2D12","#92400E","#B45309","#D97706","#F59E0B","#FCD34D","#FFFBEB"] },
+      "error-mark":      { "role": "tertiary", "displayName": "Error Mark",      "canonical": "#F87171", "tonalRamp": ["#450A0A","#7F1D1D","#991B1B","#B91C1C","#EF4444","#F87171","#FCA5A5","#FEF2F2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display / Metric", "purpose": "Dashboard metric values only (revenue, order count, margin)." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, form section headings." },
+      "body":    { "displayName": "Body", "purpose": "All main content: customer names, order details, table rows." },
+      "label":   { "displayName": "Label / Section Header", "purpose": "Always uppercase + tracking. Section dividers in forms and dashboard." },
+      "caption": { "displayName": "Caption / Metadata", "purpose": "Timestamps, helper text, error messages, badge labels." }
+    },
+    "shadows": [
+      { "name": "state-focus", "value": "0 0 0 2px #111827", "purpose": "Focus ring on all interactive elements. The only shadow in default component states." },
+      { "name": "dropdown-lift", "value": "0 4px 12px rgba(0,0,0,0.08)", "purpose": "Dropdowns, popovers, modals — elements that float above the page surface." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for color/opacity state transitions (button hover, nav item)." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Button hover, nav hover — near-instant feedback." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action trigger. Used for 'Order baru', 'Simpan', 'Kirim WA'. Small, confident, no padding excess.",
+      "html": "<button class=\"ds-btn-primary\">+ Order baru</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 4px; background: #111827; color: #ffffff; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: #374151; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #111827, 0 0 0 4px #ffffff; } .ds-btn-primary:active { background: #1F2937; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary / cancel action. Used alongside primary button or for filter resets.",
+      "html": "<button class=\"ds-btn-ghost\">Reset</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; background: #ffffff; color: #6B7280; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 400; padding: 8px 16px; border-radius: 8px; border: 1px solid #E5E7EB; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1), color 150ms; } .ds-btn-ghost:hover { background: #F9FAFB; color: #111827; } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 2px #111827; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "All form text fields. Compact, border-defined, Deep Ink focus ring.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\">Nama pelanggan <span class=\"ds-required\">*</span></label><input class=\"ds-input\" type=\"text\" placeholder=\"Budi Santoso\"></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-field-label { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 400; color: #6B7280; } .ds-required { color: #F87171; } .ds-input { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: #111827; background: #ffffff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; width: 100%; transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: #9CA3AF; } .ds-input:focus { outline: none; border-color: #111827; box-shadow: 0 0 0 2px #111827; } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Data Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White surface for grouping related data. Used in forms, detail views, metric containers.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Gross Sales</p><p class=\"ds-card-value\">Rp 4.250.000</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #F3F4F6; border-radius: 12px; padding: 20px; } .ds-card-label { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; } .ds-card-value { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; color: #111827; line-height: 1.2; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "description": "10-state order tracker. Always has text label. Color is semantic, not decorative.",
+      "html": "<span class=\"ds-badge ds-badge-siap\">Siap diambil</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; ring-width: 1px; } .ds-badge-diterima { background: #F1F5F9; color: #334155; box-shadow: inset 0 0 0 1px #CBD5E1; } .ds-badge-inspeksi { background: #FAF5FF; color: #6D28D9; box-shadow: inset 0 0 0 1px #DDD6FE; } .ds-badge-dicuci { background: #EFF6FF; color: #1D4ED8; box-shadow: inset 0 0 0 1px #BFDBFE; } .ds-badge-kering { background: #FEFCE8; color: #A16207; box-shadow: inset 0 0 0 1px #FEF08A; } .ds-badge-finishing { background: #FFF7ED; color: #C2410C; box-shadow: inset 0 0 0 1px #FED7AA; } .ds-badge-siap { background: #F0FDF4; color: #15803D; box-shadow: inset 0 0 0 1px #BBF7D0; } .ds-badge-selesai { background: #F0FDF4; color: #166534; box-shadow: inset 0 0 0 1px #BBF7D0; } .ds-badge-antri { background: #FFFBEB; color: #92400E; box-shadow: inset 0 0 0 1px #FDE68A; } .ds-badge-diambil { background: #F3F4F6; color: #4B5563; box-shadow: inset 0 0 0 1px #E5E7EB; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "description": "Primary navigation. Items recede until active — Deep Ink active state is the only strong color in the nav.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-item ds-nav-active\">Dashboard</a><a href=\"#\" class=\"ds-nav-item\">Daftar order</a><a href=\"#\" class=\"ds-nav-item\">Pelanggan</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; } .ds-nav-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 8px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 400; color: #9CA3AF; text-decoration: none; transition: background 150ms, color 150ms; } .ds-nav-item:hover { background: #F9FAFB; color: #111827; } .ds-nav-active { background: #111827; color: #ffffff; font-weight: 500; } .ds-nav-active:hover { background: #1F2937; color: #ffffff; }"
+    },
+    {
+      "name": "Warning Banner",
+      "kind": "custom",
+      "description": "Late order alert. Amber semantic surface — the only full-width color block in the system.",
+      "html": "<div class=\"ds-warning-banner\"><span>⚠ 2 order melewati estimasi selesai</span><a href=\"#\" class=\"ds-warning-link\">Lihat order</a></div>",
+      "css": ".ds-warning-banner { display: flex; align-items: center; gap: 12px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 14px 20px; } .ds-warning-banner span { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #B45309; flex: 1; } .ds-warning-link { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; color: #D97706; text-decoration: underline; white-space: nowrap; } .ds-warning-link:hover { color: #92400E; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Trusted Workbench",
+    "overview": "Seperti meja kerja tukang sepatu senior yang sudah bertahun-tahun dipakai — setiap alat ada tempatnya, setiap gerakan punya tujuan. Tidak ada yang berlebihan, tidak ada dekorasi yang sia-sia. Yang ada adalah presisi dan kepercayaan yang terbentuk dari konsistensi.\n\nIni bukan dashboard startup yang mencoba terlihat menarik. Ini adalah alat kerja profesional yang menghormati waktu penggunanya. Warna dipakai untuk komunikasi, bukan estetika. Ruang kosong adalah ketenangan yang dipilih dengan sengaja.\n\nSistem ini menolak semua yang terasa seperti template — block abu-abu seragam, grid kartu tanpa hierarki, gradient ungu-biru yang sudah jutaan kali terlihat.",
+    "keyCharacteristics": [
+      "Monokromatik dominan dengan warna semantik yang ditakar ketat",
+      "Tipografi yang bekerja — bukan tampil",
+      "Flat by default, elevasi hanya saat state berubah",
+      "Kerapatan informasi yang dihormati: data bisa padat, tapi tidak sesak",
+      "Setiap elemen interaktif terasa responsif dan presisi"
+    ],
+    "rules": [
+      { "name": "The Earned Color Rule", "body": "Warna non-netral hanya muncul untuk alasan semantik — status, peringatan, konfirmasi. Jika tidak ada pesan yang perlu disampaikan, tidak ada warna yang perlu ditambahkan.", "section": "colors" },
+      { "name": "The One Authority Rule", "body": "Deep Ink (#111827) adalah satu-satunya warna primary. Jangan tambahkan accent color lain tanpa keputusan eksplisit.", "section": "colors" },
+      { "name": "The Label Discipline Rule", "body": "Label section wajib uppercase + letter-spacing + Chalk Trace. Jangan pakai label style ini untuk konten yang perlu dibaca.", "section": "typography" },
+      { "name": "The Size Floor Rule", "body": "Tidak ada teks di bawah 12px (0.75rem) dalam konteks apapun.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Kartu, sidebar, header, dan form container selalu flat di state default. Shadow hanya untuk modal/dropdown atau focus ring.", "section": "elevation" },
+      { "name": "The Label-Plus-Color Rule", "body": "Setiap badge status harus selalu menampilkan label teks, bukan hanya warna.", "section": "components" }
+    ],
+    "dos": [
+      "Do gunakan Deep Ink (#111827) sebagai satu-satunya primary action color.",
+      "Do pakai warna semantic hanya untuk status atau state — bukan dekorasi.",
+      "Do pertahankan hierarki tonal: Workshop Canvas (page) → Clean Bench (card).",
+      "Do tulis semua section label dengan uppercase + letter-spacing + Chalk Trace.",
+      "Do tampilkan label teks di semua badge status.",
+      "Do pastikan semua body text melewati WCAG AA contrast (≥4.5:1).",
+      "Do gunakan ring-2 ring-gray-900 untuk focus state semua elemen interaktif."
+    ],
+    "donts": [
+      "Don't pakai template admin abu-abu generik — grid kartu seragam, sidebar biru.",
+      "Don't tambahkan accent color baru di luar palet semantik yang sudah ada.",
+      "Don't nest kartu di dalam kartu.",
+      "Don't pakai gradient sebagai elemen visual dekoratif.",
+      "Don't pakai box-shadow di state default komponen apapun kecuali dropdown dan modal.",
+      "Don't tampilkan status order hanya dengan warna tanpa label teks.",
+      "Don't pakai font di bawah 12px dalam konteks apapun.",
+      "Don't gunakan border-left berwarna tebal (>1px) sebagai aksen kartu.",
+      "Don't pakai warna solid merah untuk tombol — danger selalu outlined.",
+      "Don't tambahkan ikon dekoratif di atas setiap section heading."
+    ]
+  }
+}
