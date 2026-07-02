@@ -9,17 +9,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // FK on sessions.user_id — SET NULL on user delete (nullable column)
+        if (DB::getDriverName() === 'sqlite') {
+            return; // SQLite tidak support ALTER TABLE ADD CONSTRAINT / ADD FK
+        }
+
         Schema::table('sessions', function (Blueprint $table) {
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });
 
-        // CHECK constraint: reviews.rating must be 1–5
         DB::statement('ALTER TABLE reviews ADD CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5)');
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('sessions', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
         });
