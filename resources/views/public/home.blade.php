@@ -258,19 +258,19 @@
         @endphp
 
         <div class="space-y-3" x-data="{ open: null }">
-            @foreach($faqs as $i => $faq)
+            @foreach($faqs as $idx => $faq)
             <article class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <button
-                    @click="open === {{ $i }} ? open = null : open = {{ $i }}"
+                    @click="open === {{ $idx }} ? open = null : open = {{ $idx }}"
                     class="w-full flex items-center justify-between px-6 py-4 text-left font-medium text-gray-900 hover:bg-gray-50 transition-colors"
-                    :aria-expanded="open === {{ $i }}"
-                    aria-controls="faq-answer-{{ $i }}">
+                    :aria-expanded="open === {{ $idx }}"
+                    aria-controls="faq-answer-{{ $idx }}">
                     <span>{{ $faq['q'] }}</span>
-                    <svg class="w-4 h-4 text-gray-500 shrink-0 ml-4 transition-transform" :class="open === {{ $i }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg class="w-4 h-4 text-gray-500 shrink-0 ml-4 transition-transform" :class="open === {{ $idx }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
-                <div id="faq-answer-{{ $i }}" x-show="open === {{ $i }}" x-cloak class="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-50">
+                <div id="faq-answer-{{ $idx }}" x-show="open === {{ $idx }}" x-cloak class="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-50">
                     <p class="pt-4">{{ $faq['a'] }}</p>
                 </div>
             </article>
