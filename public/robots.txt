@@ -1,2 +1,32 @@
 User-agent: *
-Disallow:
+Allow: /
+Allow: /about
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms
+Allow: /refund-policy
+
+Disallow: /dashboard
+Disallow: /orders
+Disallow: /pelanggans
+Disallow: /karyawans
+Disallow: /laporan
+Disallow: /operasional
+Disallow: /hpp
+Disallow: /layanans
+Disallow: /vouchers
+Disallow: /stok
+Disallow: /rewards
+Disallow: /wa-templates
+Disallow: /lokasi
+Disallow: /reviews
+Disallow: /profil
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /status/
+Disallow: /api/
+
+Sitemap: https://stepshineworks.store/sitemap.xml

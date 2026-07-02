@@ -16,11 +16,19 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\WaTemplateController;
+use App\Http\Controllers\PublicPageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect()->route('dashboard'));
+// ── PUBLIC MARKETING PAGES ──────────────────────────────────────────────────
+Route::get('/',               [PublicPageController::class, 'home'])->name('home');
+Route::get('/about',          [PublicPageController::class, 'about'])->name('about');
+Route::get('/contact',        [PublicPageController::class, 'contact'])->name('contact.show');
+Route::post('/contact',       [PublicPageController::class, 'contactSubmit'])->middleware('throttle:5,60')->name('contact.submit');
+Route::get('/privacy-policy', [PublicPageController::class, 'privacy'])->name('privacy');
+Route::get('/terms',          [PublicPageController::class, 'terms'])->name('terms');
+Route::get('/refund-policy',  [PublicPageController::class, 'refund'])->name('refund');
 
-// Publik
+// Publik — order tracking & review
 Route::get('/status/{token}',                           [StatusController::class, 'show'])->name('status.order');
 Route::post('orders/{order:token_publik}/review',       [ReviewController::class, 'store'])->middleware('throttle:5,60')->name('orders.review.store');
 
