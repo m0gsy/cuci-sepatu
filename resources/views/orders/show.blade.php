@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Order ' . $order->no_order)
 
 @section('header-actions')
@@ -245,100 +245,6 @@
         @endif
     </div>
     @endif
-
-    {{-- Foto before/during/after --}}
-    <div class="bg-white border border-gray-100 rounded-xl p-6" x-data="{ uploadOpen: {{ $errors->has('foto') || $errors->has('tipe') ? 'true' : 'false' }} }">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Foto before & after</h2>
-            <button @click="uploadOpen = !uploadOpen"
-                    class="text-xs border border-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50">
-                + Upload foto
-            </button>
-        </div>
-
-        {{-- Form upload --}}
-        <div x-show="uploadOpen" class="mb-4 bg-gray-50 rounded-lg p-4">
-            @if($errors->has('foto') || $errors->has('tipe'))
-            <div class="mb-3 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">
-                {{ $errors->first('foto') ?? $errors->first('tipe') }}
-            </div>
-            @endif
-            <form method="POST" action="{{ route('orders.foto.store', $order) }}" enctype="multipart/form-data">
-                @csrf
-                <div class="grid grid-cols-3 gap-3 mb-3">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Jenis foto</label>
-                        <select name="tipe"
-                                class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
-                            @if(!auth()->user()->isCleaner())
-                            <option value="before">Sebelum</option>
-                            <option value="during">Proses</option>
-                            @endif
-                            <option value="after" {{ auth()->user()->isCleaner() ? 'selected' : '' }}>Sesudah</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">File foto</label>
-                        <input type="file" name="foto" accept="image/*"
-                               class="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-brand file:text-white cursor-pointer">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Keterangan</label>
-                        <input type="text" name="keterangan" placeholder="Opsional"
-                               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit"
-                            class="px-4 py-2 text-sm bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors">
-                        Upload
-                    </button>
-                    <button type="button" @click="uploadOpen = false"
-                            class="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        Batal
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        {{-- Gallery by type --}}
-        @php $grouped = $order->fotos->groupBy('tipe'); @endphp
-        @foreach(['before' => 'Sebelum', 'during' => 'Proses', 'after' => 'Sesudah'] as $tipe => $label)
-        @if(isset($grouped[$tipe]) && $grouped[$tipe]->count() > 0)
-        <div class="mb-4">
-            <p class="text-xs font-medium text-gray-500 mb-2">{{ $label }}</p>
-            <div class="flex flex-wrap gap-2">
-                @foreach($grouped[$tipe] as $foto)
-                <div class="relative group">
-                    <a href="{{ $foto->url }}" target="_blank">
-                        <img src="{{ $foto->url }}" alt="{{ $label }}"
-                             class="w-24 h-24 object-cover rounded-lg border border-gray-100 hover:opacity-90 transition-opacity">
-                    </a>
-                    @if($foto->keterangan)
-                    <p class="text-xs text-gray-400 mt-1 max-w-24 truncate">{{ $foto->keterangan }}</p>
-                    @endif
-                    @if(!auth()->user()->isCleaner())
-                    <form method="POST" action="{{ route('orders.foto.destroy', $foto) }}"
-                          class="absolute top-1 right-1 hidden group-hover:block"
-                          onsubmit="return confirm('Hapus foto ini?')">
-                        @csrf @method('DELETE')
-                        <button type="submit"
-                                class="w-5 h-5 bg-red-600 text-white rounded-full text-xs flex items-center justify-center leading-none">
-                            ✕
-                        </button>
-                    </form>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-        @endforeach
-
-        @if($order->fotos->isEmpty())
-        <p class="text-sm text-gray-400">Belum ada foto yang diupload.</p>
-        @endif
-    </div>
 
     {{-- Pembayaran & Profit --}}
     <div class="bg-white border border-gray-100 rounded-xl p-6">

@@ -12,7 +12,6 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\HppController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\VoucherController;
-use App\Http\Controllers\FotoOrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\RewardController;
@@ -47,10 +46,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('orders/{order}/nota',          [OrderController::class, 'cetakNota'])->middleware('permission:orders.manage')->name('orders.nota');
     Route::post('orders/{order}/kirim-wa',     [OrderController::class, 'kirimUlangWa'])->middleware('permission:orders.manage')->name('orders.wa');
     Route::post('orders/{order}/kirim-invoice',[OrderController::class, 'kirimInvoice'])->middleware('permission:orders.manage')->name('orders.invoice');
-    // ── FOTO ────────────────────────────────────────────────────────────
-    Route::post('orders/{order}/foto',         [FotoOrderController::class, 'store'])->middleware('permission:orders.manage')->name('orders.foto.store');
-    Route::delete('fotos/{foto}',              [FotoOrderController::class, 'destroy'])->middleware('permission:orders.manage')->name('orders.foto.destroy');
-
     // ── PELANGGAN ─────────────────────────────────────────────────────────
     Route::get('pelanggans',                   [PelangganController::class, 'index'])->middleware('permission:pelanggan')->name('pelanggans.index');
     Route::get('pelanggans/cari',              [PelangganController::class, 'cari'])->middleware('throttle:60,1')->name('pelanggans.cari');

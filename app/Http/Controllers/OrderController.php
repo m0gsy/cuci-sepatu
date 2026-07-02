@@ -146,7 +146,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load(['layanan', 'pembayaran', 'user', 'pelanggan', 'lokasi.layanans', 'fotos', 'voucher', 'review']);
+        $order->load(['layanan', 'pembayaran', 'user', 'pelanggan', 'lokasi.layanans', 'voucher', 'review']);
         $lokasis = Lokasi::where('aktif', true)->orderBy('kode')->get();
         return view('orders.show', compact('order', 'lokasis'));
     }

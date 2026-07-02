@@ -56,7 +56,6 @@ class Order extends Model
     public function pelanggan()  { return $this->belongsTo(Pelanggan::class); }
     public function lokasi()     { return $this->belongsTo(Lokasi::class); }
     public function voucher()    { return $this->belongsTo(Voucher::class); }
-    public function fotos()      { return $this->hasMany(FotoOrder::class); }
     public function review()     { return $this->hasOne(Review::class); }
 
     public function getHargaEfektifAttribute(): int

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -77,21 +77,6 @@
                 @endforeach
             </div>
         </div>
-
-        {{-- Foto after (jika ada) --}}
-        @php $fotosAfter = $order->fotos->where('tipe', 'after'); @endphp
-        @if($fotosAfter->isNotEmpty())
-        <div class="px-6 pt-4 border-b border-gray-100">
-            <p class="text-xs font-medium text-gray-500 mb-2">Hasil cucian</p>
-            <div class="flex gap-2 flex-wrap pb-4">
-                @foreach($fotosAfter as $foto)
-                <img src="{{ asset('storage/' . $foto->path) }}"
-                     alt="After"
-                     class="w-20 h-20 object-cover rounded-lg border border-gray-100">
-                @endforeach
-            </div>
-        </div>
-        @endif
 
         {{-- Detail order --}}
         <div class="px-6 py-4">
