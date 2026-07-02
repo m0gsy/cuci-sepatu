@@ -75,7 +75,7 @@
                 Kelola order, pantau status real-time 7 tahap, kirim notifikasi WhatsApp otomatis ke pelanggan, dan analisis bisnis Anda — semua dalam satu sistem.
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
-                <a href="{{ route('register') }}"
+                <a href="{{ route('login') }}"
                    class="inline-flex items-center justify-center px-7 py-3.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-base">
                     Mulai Gratis Sekarang
                     <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -291,7 +291,7 @@
             Daftar sekarang dan mulai kelola bisnis Anda secara profesional.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="{{ route('register') }}"
+            <a href="{{ route('login') }}"
                class="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-base">
                 Mulai Gratis Sekarang
             </a>

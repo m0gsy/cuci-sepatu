@@ -199,8 +199,8 @@
             <a href="{{ url('/contact') }}" class="inline-flex items-center justify-center px-7 py-3.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
                 Hubungi Kami
             </a>
-            <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-7 py-3.5 border border-white/30 text-white font-medium rounded-xl hover:bg-white/10 transition-colors">
-                Daftar Sekarang
+            <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-7 py-3.5 border border-white/30 text-white font-medium rounded-xl hover:bg-white/10 transition-colors">
+                Masuk ke Sistem
             </a>
         </div>
     </div>
