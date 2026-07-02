@@ -55,7 +55,7 @@ class LaporanController extends Controller
 
     public function index(Request $request)
     {
-        $bulan = $request->bulan ?? now()->format('Y-m');
+        $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
         $data           = $this->getRekapData($bulan);
@@ -71,7 +71,7 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $bulan = $request->bulan ?? now()->format('Y-m');
+        $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         $data  = $this->getData($bulan);
         $pdf   = Pdf::loadView('pdf.laporan', $data)->setPaper('a4', 'portrait');
         return $pdf->download("laporan-{$bulan}.pdf");
@@ -79,7 +79,7 @@ class LaporanController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $bulan     = $request->bulan ?? now()->format('Y-m');
+        $bulan     = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         $data      = $this->getData($bulan);
         $rekap     = $data['rekap'];
         $orders    = $data['orders'];

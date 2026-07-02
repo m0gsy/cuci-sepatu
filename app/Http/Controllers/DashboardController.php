@@ -27,16 +27,18 @@ class DashboardController extends Controller
         }
 
         // ── Stats hari ini ──────────────────────────────────────────────────
-        $ordersHariIni = Order::with(['layanan', 'pembayaran', 'lokasi.layanans'])
-            ->whereDate('created_at', today())
-            ->whereIn('status', self::STATUS_HITUNG)
-            ->get();
-
         $stats = [
             'pendapatan_hari_ini' => Pembayaran::whereDate('dibayar_pada', today())
                 ->where('status', 'lunas')->sum('total'),
-            'hpp_hari_ini'        => $ordersHariIni->sum('hpp'),
-            'gross_profit_hari'   => $ordersHariIni->sum('gross_profit'),
+            'hpp_hari_ini'        => Order::whereDate('created_at', today())
+                ->whereIn('status', self::STATUS_HITUNG)->sum('hpp'),
+            'gross_profit_hari'   => (int) DB::table('orders')
+                ->leftJoin('pembayarans', 'pembayarans.order_id', '=', 'orders.id')
+                ->join('layanans', 'layanans.id', '=', 'orders.layanan_id')
+                ->whereDate('orders.created_at', today())
+                ->whereIn('orders.status', self::STATUS_HITUNG)
+                ->selectRaw('COALESCE(SUM(COALESCE(pembayarans.total, layanans.harga * orders.jumlah_pasang) - orders.hpp), 0) as profit')
+                ->value('profit'),
             'order_hari_ini'      => Order::whereDate('created_at', today())->count(),
             'dalam_antrian'       => Order::whereIn('status', self::STATUS_AKTIF)->count(),
             'siap_diambil'        => Order::where('status', 'siap_diambil')->count(),
@@ -48,6 +50,7 @@ class DashboardController extends Controller
 
         // ── Stats bulan ini ─────────────────────────────────────────────────
         $ordersBulanIni = Order::with(['layanan', 'pembayaran', 'lokasi.layanans'])
+            ->select('id', 'layanan_id', 'lokasi_id', 'jumlah_pasang', 'hpp')
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->whereIn('status', self::STATUS_HITUNG)

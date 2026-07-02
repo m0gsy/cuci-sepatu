@@ -248,7 +248,7 @@
 function orderForm() {
     const hppData = @json($hppLayanan);
     return {
-        jumlah: {{ old('jumlah_pasang', 1) }},
+        jumlah: @json(old('jumlah_pasang', 1)),
         hargaLayananAsli: 0,   // harga default dari layanan
         hargaSatuan: 0,        // harga yang dipakai (bisa override dari lokasi)
         hargaTambahan: 0,      // harga_tambahan lokasi (fallback)

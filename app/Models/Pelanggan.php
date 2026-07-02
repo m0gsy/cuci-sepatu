@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class Pelanggan extends Model
 {
-    protected $fillable = ['nama', 'no_hp', 'alamat', 'catatan', 'poin', 'tier'];
+    protected $fillable = ['nama', 'no_hp', 'alamat', 'catatan'];
+    // poin dan tier dikelola via tambahPoin()/updateTier() — bukan mass-assignable
 
     // Tiers: reguler < silver < gold < platinum
     const TIER_THRESHOLDS = [

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\WaTemplate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -12,24 +13,32 @@ class WhatsappService
 
     public function __construct()
     {
-        $this->token = config('services.fonnte.token', '');
+        $this->token = config('services.wablas.token', '');
     }
 
     public function kirim(string $nomorHp, string $pesan): bool
     {
         if (empty($this->token)) {
-            Log::warning('WA: FONNTE_TOKEN belum diisi di .env');
+            Log::warning('WA: WABLAS_TOKEN belum diisi di .env');
             return false;
         }
         try {
-            $nomor    = $this->formatNomor($nomorHp);
-            $response = Http::withHeaders(['Authorization' => $this->token])
-                ->post('https://api.fonnte.com/send', [
-                    'target'  => $nomor,
-                    'message' => $pesan,
-                ]);
+            $nomor   = $this->formatNomor($nomorHp);
+            $baseUrl = rtrim(config('services.wablas.url', 'https://smg.wablas.com'), '/');
+            $secret  = config('services.wablas.secret');
+            $payload = ['phone' => $nomor, 'message' => $pesan];
+            if ($secret) {
+                $payload['secret'] = $secret;
+            }
+            $response = Http::timeout(15)->withHeaders(['Authorization' => $this->token])
+                ->post("{$baseUrl}/api/send-message", $payload);
             if (!$response->successful()) {
                 Log::warning('WA gagal', ['nomor' => $nomor, 'body' => $response->body()]);
+                return false;
+            }
+            $body = $response->json();
+            if (isset($body['status']) && $body['status'] === false) {
+                Log::warning('WA gagal', ['nomor' => $nomor, 'body' => $body]);
                 return false;
             }
             return true;
@@ -41,104 +50,99 @@ class WhatsappService
 
     public function kirimInvoiceLink(Order $order): bool
     {
-        $link  = route('orders.nota', $order);
-        $pesan = $this->pesanInvoice($order) . "\n\nUnduh invoice PDF:\n" . $link;
+        // Kirim link status publik — bukan URL staff-only (orders.nota)
+        $link  = route('status.order', $order->token_publik);
+        $pesan = $this->pesanInvoice($order) . "\n\nCek status order:\n" . $link;
         return $this->kirim($order->no_hp, $pesan);
-    }
-
-    public function pesanInvoice(Order $order): string
-    {
-        $total       = 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.');
-        $hargaSat    = 'Rp ' . number_format($order->harga_efektif, 0, ',', '.');
-        $tglOrder    = $order->created_at->isoFormat('D MMMM Y');
-        $metode      = ucfirst($order->pembayaran?->metode ?? 'tempo');
-        $statusBayar = strtoupper($order->pembayaran?->status ?? 'belum');
-        $iconStatus  = ($order->pembayaran?->status === 'lunas') ? 'LUNAS' : 'BELUM LUNAS';
-        $lokasi      = $order->lokasi ? $order->lokasi->nama : '-';
-
-        return "Invoice - " . $order->no_order . "\n\n"
-            . "Kepada  : " . $order->nama_pelanggan . "\n"
-            . "Tanggal : " . $tglOrder . "\n\n"
-            . "Rincian Layanan:\n"
-            . "Layanan  : " . $order->layanan->nama . "\n"
-            . "Lokasi   : " . $lokasi . "\n"
-            . "Jenis    : " . $order->jenis_sepatu . "\n"
-            . "Jumlah   : " . $order->jumlah_pasang . " pasang\n\n"
-            . "Harga/pasang : " . $hargaSat . "\n"
-            . "Jumlah pasang: x " . $order->jumlah_pasang . "\n"
-            . "Total        : " . $total . "\n\n"
-            . "Metode bayar : " . $metode . "\n"
-            . "Status bayar : " . $iconStatus . "\n\n"
-            . "Terima kasih telah mempercayakan sepatu Anda kepada kami!\n"
-            . "_Step Shine Works_";
     }
 
     public function pesanOrderMasuk(Order $order): string
     {
-        $total    = 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.');
-        $estimasi = $order->estimasi_selesai?->isoFormat('D MMMM Y') ?? '—';
-        $link     = route('status.order', $order->token_publik);
-        $metode   = ucfirst($order->pembayaran?->metode ?? 'tempo');
-        $lokasi   = $order->lokasi ? $order->lokasi->nama : null;
-
-        return "Halo " . $order->nama_pelanggan . "!\n\n"
-            . "Order sepatu Anda di *Step Shine Works* sudah kami terima.\n\n"
-            . "Detail Order:\n"
-            . "No. Order    : " . $order->no_order . "\n"
-            . "Layanan      : " . $order->layanan->nama . "\n"
-            . ($lokasi ? "Lokasi       : " . $lokasi . "\n" : '')
-            . "Jumlah       : " . $order->jumlah_pasang . " pasang\n"
-            . "Total        : " . $total . "\n"
-            . "Metode bayar : " . $metode . "\n"
-            . "Est. selesai : " . $estimasi . "\n\n"
-            . "Pantau status order Anda di:\n"
-            . $link . "\n\n"
-            . "Terima kasih!\n"
-            . "_Step Shine Works_";
+        return $this->render('order_masuk', [
+            'nama_pelanggan'   => $order->nama_pelanggan,
+            'no_order'         => $order->no_order,
+            'layanan'          => $order->layanan->nama,
+            'lokasi'           => $order->lokasi?->nama ?? '',
+            'jumlah_pasang'    => $order->jumlah_pasang,
+            'total'            => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
+            'metode_bayar'     => ucfirst($order->pembayaran?->metode ?? 'tempo'),
+            'estimasi_selesai' => $order->estimasi_selesai?->isoFormat('D MMMM Y') ?? '—',
+            'link_status'      => route('status.order', $order->token_publik),
+        ]);
     }
 
     public function pesanMulaiDicuci(Order $order): string
     {
-        $link = route('status.order', $order->token_publik);
-        $lokasi = $order->lokasi ? $order->lokasi->nama : null;
-
-        return "Halo " . $order->nama_pelanggan . "!\n\n"
-            . "Kabar terbaru dari *Step Shine Works*: sepatu Anda sudah mulai proses pencucian.\n\n"
-            . "No. Order : " . $order->no_order . "\n"
-            . "Layanan   : " . $order->layanan->nama . "\n"
-            . ($lokasi ? "Lokasi    : " . $lokasi . "\n" : '')
-            . "\nPantau status: " . $link . "\n\n"
-            . "_Step Shine Works_";
+        return $this->render('mulai_dicuci', [
+            'nama_pelanggan' => $order->nama_pelanggan,
+            'no_order'       => $order->no_order,
+            'layanan'        => $order->layanan->nama,
+            'lokasi'         => $order->lokasi?->nama ?? '',
+            'link_status'    => route('status.order', $order->token_publik),
+        ]);
     }
 
     public function pesanOrderSelesai(Order $order): string
     {
-        $total       = 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.');
-        $link        = route('status.order', $order->token_publik);
-        $poin        = $order->poin;
-        $statusBayar = strtoupper($order->pembayaran?->status ?? 'belum');
+        $poin = $order->poin;
+        return $this->render('order_selesai', [
+            'nama_pelanggan' => $order->nama_pelanggan,
+            'no_order'       => $order->no_order,
+            'layanan'        => $order->layanan->nama,
+            'lokasi'         => $order->lokasi?->nama ?? '',
+            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
+            'status_bayar'   => strtoupper($order->pembayaran?->status ?? 'belum'),
+            'poin'           => $poin > 0 ? '+' . $poin . ' poin' : '',
+            'link_status'    => route('status.order', $order->token_publik),
+        ]);
+    }
 
-        $lokasi = $order->lokasi ? $order->lokasi->nama : null;
+    public function pesanInvoice(Order $order): string
+    {
+        return $this->render('invoice', [
+            'nama_pelanggan' => $order->nama_pelanggan,
+            'no_order'       => $order->no_order,
+            'tanggal'        => $order->created_at->isoFormat('D MMMM Y'),
+            'layanan'        => $order->layanan->nama,
+            'lokasi'         => $order->lokasi?->nama ?? '-',
+            'jenis_sepatu'   => $order->jenis_sepatu,
+            'jumlah_pasang'  => $order->jumlah_pasang,
+            'harga_satuan'   => 'Rp ' . number_format($order->harga_efektif, 0, ',', '.'),
+            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
+            'metode_bayar'   => ucfirst($order->pembayaran?->metode ?? 'tempo'),
+            'status_bayar'   => ($order->pembayaran?->status === 'lunas') ? 'LUNAS' : 'BELUM LUNAS',
+        ]);
+    }
 
-        $msg = "Halo " . $order->nama_pelanggan . "!\n\n"
-            . "Sepatu Anda sudah selesai dicuci dan siap diambil!\n\n"
-            . "Detail Order:\n"
-            . "No. Order    : " . $order->no_order . "\n"
-            . "Layanan      : " . $order->layanan->nama . "\n"
-            . ($lokasi ? "Lokasi       : " . $lokasi . "\n" : '')
-            . "Total        : " . $total . "\n"
-            . "Status bayar : " . $statusBayar . "\n";
+    private function render(string $kode, array $vars): string
+    {
+        $tmpl = WaTemplate::where('kode', $kode)->value('template') ?? '';
 
-        if ($poin > 0) {
-            $msg .= "Poin earned  : +" . $poin . " poin\n";
+        // Fallback ke hardcoded jika tabel kosong (belum di-seed)
+        if (empty($tmpl)) {
+            $tmpl = $this->defaultTemplate($kode);
         }
 
-        $msg .= "\nPantau status: " . $link . "\n\n"
-            . "Silakan ambil di toko kami.\n"
-            . "Terima kasih sudah mempercayakan sepatu Anda kepada kami!\n"
-            . "_Step Shine Works_";
+        foreach ($vars as $k => $v) {
+            $tmpl = str_replace("{{$k}}", (string) ($v ?? ''), $tmpl);
+        }
 
-        return $msg;
+        // Hapus baris yang nilainya kosong setelah substitusi (misal "Lokasi : ")
+        $lines = explode("\n", $tmpl);
+        $lines = array_filter($lines, fn($line) => !preg_match('/\w\s*:\s*$/', trim($line)));
+
+        return trim(preg_replace('/\n{3,}/', "\n\n", implode("\n", $lines)));
+    }
+
+    private function defaultTemplate(string $kode): string
+    {
+        return match($kode) {
+            'order_masuk'   => "Halo {nama_pelanggan}!\n\nOrder sepatu Anda di *Step Shine Works* sudah kami terima.\n\nDetail Order:\nNo. Order    : {no_order}\nLayanan      : {layanan}\nLokasi       : {lokasi}\nJumlah       : {jumlah_pasang} pasang\nTotal        : {total}\nMetode bayar : {metode_bayar}\nEst. selesai : {estimasi_selesai}\n\nPantau status order Anda di:\n{link_status}\n\nTerima kasih!\n_Step Shine Works_",
+            'mulai_dicuci'  => "Halo {nama_pelanggan}!\n\nSepatu Anda sudah mulai proses pencucian.\n\nNo. Order : {no_order}\nLayanan   : {layanan}\nLokasi    : {lokasi}\n\nPantau status: {link_status}\n\n_Step Shine Works_",
+            'order_selesai' => "Halo {nama_pelanggan}!\n\nSepatu Anda siap diambil!\n\nNo. Order    : {no_order}\nLayanan      : {layanan}\nLokasi       : {lokasi}\nTotal        : {total}\nStatus bayar : {status_bayar}\nPoin earned  : {poin}\n\nPantau status: {link_status}\n\n_Step Shine Works_",
+            'invoice'       => "Invoice - {no_order}\n\nKepada  : {nama_pelanggan}\nTanggal : {tanggal}\n\nLayanan  : {layanan}\nLokasi   : {lokasi}\nJenis    : {jenis_sepatu}\nJumlah   : {jumlah_pasang} pasang\n\nHarga/pasang : {harga_satuan}\nTotal        : {total}\n\nMetode bayar : {metode_bayar}\nStatus bayar : {status_bayar}\n\nTerima kasih!\n_Step Shine Works_",
+            default         => '',
+        };
     }
 
     protected function formatNomor(string $nomor): string

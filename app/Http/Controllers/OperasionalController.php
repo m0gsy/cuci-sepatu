@@ -11,7 +11,7 @@ class OperasionalController extends Controller
 {
     public function index(Request $request)
     {
-        $bulan = $request->bulan ?? now()->format('Y-m');
+        $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
         $operasionals = Operasional::with('user')

@@ -17,7 +17,11 @@
         .badge-kering       { @apply bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200; }
         .badge-finishing    { @apply bg-orange-50 text-orange-700 ring-1 ring-orange-200; }
         .badge-siap_diambil { @apply bg-green-50 text-green-700 ring-1 ring-green-200; }
-        .nav-active         { background: #1a3a2a; color: white; font-weight: 500; }
+        .nav-active         { background: rgba(255,255,255,0.12); color: white; font-weight: 500; }
+        .nav-link           { color: rgba(187,230,207,0.65); }
+        .nav-link:hover     { background: rgba(255,255,255,0.08); color: white; }
+        .nav-footer-link    { color: rgba(187,230,207,0.55); }
+        .nav-footer-link:hover { color: white; }
     </style>
 </head>
 <body class="h-full bg-gray-50 font-sans antialiased">
@@ -66,6 +70,7 @@
                         ['route' => 'reviews.index',    'label' => 'Ulasan',         'match' => 'reviews.*'],
                         ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
                         ['route' => 'stok.index',       'label' => 'Stok bahan',     'match' => 'stok.*'],
+                        ['route' => 'wa-templates.index','label' => 'Template WA',   'match' => 'wa-templates.*'],
                     ]);
                 } else {
                     // Admin/Cleaner: tampilkan menu sesuai permission
@@ -81,6 +86,7 @@
                         'rewards'       => ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
                         'stok'          => ['route' => 'stok.index',       'label' => 'Stok bahan',     'match' => 'stok.*'],
                         'operasional'   => ['route' => 'operasional.index','label' => 'Operasional',    'match' => 'operasional.*'],
+                        'wa_template'   => ['route' => 'wa-templates.index','label' => 'Template WA',  'match' => 'wa-templates.*'],
                     ];
 
                     // Daftar order selalu ada untuk semua
@@ -102,9 +108,7 @@
             @foreach($navItems as $item)
                 @php $active = request()->routeIs($item['match']); @endphp
                 <a href="{{ route($item['route']) }}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-                   style="{{ $active ? 'background:rgba(255,255,255,0.12);color:white;font-weight:500;' : 'color:rgba(187,230,207,0.65);' }}"
-                   @if(!$active) onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white';" onmouseout="this.style.background='';this.style.color='rgba(187,230,207,0.65)';" @endif>
+                   class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ $active ? 'nav-active' : 'nav-link' }}">
                     {{ $item['label'] }}
                 </a>
             @endforeach
@@ -113,31 +117,25 @@
                 <p class="text-xs font-medium uppercase tracking-wider" style="color:rgba(187,230,207,0.4);">Kelola</p>
             </div>
             <a href="{{ route('hpp.index') }}"
-               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-               style="{{ request()->routeIs('hpp.index') ? 'background:rgba(255,255,255,0.12);color:white;font-weight:500;' : 'color:rgba(187,230,207,0.65);' }}"
-               @if(!request()->routeIs('hpp.index')) onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white';" onmouseout="this.style.background='';this.style.color='rgba(187,230,207,0.65)';" @endif>
+               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('hpp.index') ? 'nav-active' : 'nav-link' }}">
                 Kelola HPP
             </a>
             <a href="{{ route('lokasi.index') }}"
-               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-               style="{{ request()->routeIs('lokasi.*') ? 'background:rgba(255,255,255,0.12);color:white;font-weight:500;' : 'color:rgba(187,230,207,0.65);' }}"
-               @if(!request()->routeIs('lokasi.*')) onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white';" onmouseout="this.style.background='';this.style.color='rgba(187,230,207,0.65)';" @endif>
+               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('lokasi.*') ? 'nav-active' : 'nav-link' }}">
                 Lokasi sepatu
             </a>
             <a href="{{ route('karyawans.index') }}"
-               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-               style="{{ request()->routeIs('karyawans.*') ? 'background:rgba(255,255,255,0.12);color:white;font-weight:500;' : 'color:rgba(187,230,207,0.65);' }}"
-               @if(!request()->routeIs('karyawans.*')) onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white';" onmouseout="this.style.background='';this.style.color='rgba(187,230,207,0.65)';" @endif>
+               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('karyawans.*') ? 'nav-active' : 'nav-link' }}">
                 Karyawan
             </a>
             @endif
         </nav>
         <div class="px-5 py-4 shrink-0" style="border-top:1px solid rgba(255,255,255,0.08);">
             <p class="text-xs mb-1" style="color:rgba(187,230,207,0.5);">{{ now()->isoFormat('D MMM Y') }}</p>
-            <a href="{{ route('profil.index') }}" class="block text-xs mb-1.5 transition-colors" style="color:rgba(187,230,207,0.55);" onmouseover="this.style.color='white';" onmouseout="this.style.color='rgba(187,230,207,0.55)';">Profil &amp; password</a>
+            <a href="{{ route('profil.index') }}" class="block text-xs mb-1.5 transition-colors nav-footer-link">Profil &amp; password</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="text-xs transition-colors" style="color:rgba(187,230,207,0.55);" onmouseover="this.style.color='white';" onmouseout="this.style.color='rgba(187,230,207,0.55)';">Keluar →</button>
+                <button type="submit" class="text-xs transition-colors nav-footer-link">Keluar →</button>
             </form>
         </div>
     </aside>
@@ -146,8 +144,9 @@
         <header class="bg-white border-b border-gray-100 px-4 py-3.5 flex items-center justify-between sticky top-0 z-10">
             <div class="flex items-center gap-3">
                 <button @click="sidebarOpen = !sidebarOpen"
+                        aria-label="Toggle sidebar"
                         class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>

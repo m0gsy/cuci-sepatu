@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
         // Admin
         User::firstOrCreate(['email' => 'admin@cucisepatu.com'], [
             'name'     => 'Admin',
-            'password' => Hash::make('password'),
+            'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'Admin@StepShine1')),
             'role'     => 'admin',
             'aktif'    => true,
         ]);
@@ -57,5 +57,7 @@ class DatabaseSeeder extends Seeder
         foreach ($rewards as $r) {
             Reward::firstOrCreate(['nama' => $r['nama']], $r);
         }
+
+        $this->call(WaTemplateSeeder::class);
     }
 }

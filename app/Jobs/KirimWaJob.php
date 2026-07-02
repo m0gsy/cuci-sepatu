@@ -23,6 +23,16 @@ class KirimWaJob implements ShouldQueue
 
     public function handle(WhatsappService $wa): void
     {
-        $wa->kirim($this->nomorHp, $this->pesan);
+        $berhasil = $wa->kirim($this->nomorHp, $this->pesan);
+        if (!$berhasil && config('queue.default') !== 'sync') {
+            // Async mode: throw triggers retry (tries=3, backoff=60)
+            throw new \RuntimeException("WA gagal terkirim ke {$this->nomorHp}");
+        }
+        // Sync mode: log sudah ada di WhatsappService::kirim(), cukup return
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        \Illuminate\Support\Facades\Log::error("KirimWaJob gagal permanen ke {$this->nomorHp}: {$e->getMessage()}");
     }
 }

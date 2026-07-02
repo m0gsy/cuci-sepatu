@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Stok;
 use App\Models\StokMutasi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StokController extends Controller
 {
@@ -50,25 +51,28 @@ class StokController extends Controller
             'keterangan' => 'nullable|string|max:200',
         ]);
 
-        $sebelum = $stok->stok_saat_ini;
+        DB::transaction(function () use ($stok, $data) {
+            $stok = Stok::lockForUpdate()->findOrFail($stok->id);
 
-        $sesudah = match($data['tipe']) {
-            'masuk'       => $sebelum + $data['jumlah'],
-            'keluar'      => max(0, $sebelum - $data['jumlah']),
-            'penyesuaian' => $data['jumlah'],
-        };
+            $sebelum = $stok->stok_saat_ini;
+            $sesudah = match($data['tipe']) {
+                'masuk'       => $sebelum + $data['jumlah'],
+                'keluar'      => max(0, $sebelum - $data['jumlah']),
+                'penyesuaian' => $data['jumlah'],
+            };
 
-        $stok->update(['stok_saat_ini' => $sesudah]);
+            $stok->update(['stok_saat_ini' => $sesudah]);
 
-        StokMutasi::create([
-            'stok_id'      => $stok->id,
-            'user_id'      => auth()->id(),
-            'tipe'         => $data['tipe'],
-            'jumlah'       => $data['jumlah'],
-            'stok_sebelum' => $sebelum,
-            'stok_sesudah' => $sesudah,
-            'keterangan'   => $data['keterangan'] ?? null,
-        ]);
+            StokMutasi::create([
+                'stok_id'      => $stok->id,
+                'user_id'      => auth()->id(),
+                'tipe'         => $data['tipe'],
+                'jumlah'       => $data['jumlah'],
+                'stok_sebelum' => $sebelum,
+                'stok_sesudah' => $sesudah,
+                'keterangan'   => $data['keterangan'] ?? null,
+            ]);
+        });
 
         return back()->with('success', "Stok '{$stok->nama}' berhasil diperbarui.");
     }

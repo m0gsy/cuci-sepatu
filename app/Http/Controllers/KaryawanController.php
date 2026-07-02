@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\RolePermission;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class KaryawanController extends Controller
 {
@@ -69,7 +69,7 @@ class KaryawanController extends Controller
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'role'     => 'required|in:owner,admin,cleaner',
-            'no_hp'    => 'nullable|string|max:20',
+            'no_hp'    => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
             'alamat'   => 'nullable|string|max:200',
         ]);
 
@@ -96,7 +96,7 @@ class KaryawanController extends Controller
             'name'   => 'required|string|max:100',
             'email'  => 'required|email|unique:users,email,' . $karyawan->id,
             'role'   => 'required|in:owner,admin,cleaner',
-            'no_hp'  => 'nullable|string|max:20',
+            'no_hp'  => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
             'alamat' => 'nullable|string|max:200',
         ]);
 
@@ -116,15 +116,20 @@ class KaryawanController extends Controller
         $allKeys = collect(RolePermission::allPermissions())->pluck('key')->toArray();
         $roles   = ['admin', 'cleaner'];
 
-        foreach ($roles as $role) {
-            $granted = $request->input("permissions.{$role}", []);
-            // Hanya simpan key yang valid
-            $granted = array_intersect($granted, $allKeys);
-
-            RolePermission::where('role', $role)->delete();
-            foreach ($granted as $key) {
-                RolePermission::create(['role' => $role, 'permission' => $key]);
+        DB::transaction(function () use ($roles, $allKeys, $request) {
+            foreach ($roles as $role) {
+                $granted = array_intersect(
+                    $request->input("permissions.{$role}", []),
+                    $allKeys
+                );
+                RolePermission::where('role', $role)->delete();
+                foreach ($granted as $key) {
+                    RolePermission::create(['role' => $role, 'permission' => $key]);
+                }
             }
+        });
+
+        foreach ($roles as $role) {
             RolePermission::bustCache($role);
         }
 

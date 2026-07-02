@@ -67,7 +67,7 @@ class PelangganController extends Controller
     {
         $data = $request->validate([
             'nama'    => 'required|string|max:100',
-            'no_hp'   => 'required|string|max:20|unique:pelanggans,no_hp',
+            'no_hp'   => ['required', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/', 'unique:pelanggans,no_hp'],
             'alamat'  => 'nullable|string|max:200',
             'catatan' => 'nullable|string|max:500',
         ]);
@@ -79,7 +79,7 @@ class PelangganController extends Controller
     {
         $data = $request->validate([
             'nama'    => 'required|string|max:100',
-            'no_hp'   => 'required|string|max:20|unique:pelanggans,no_hp,' . $pelanggan->id,
+            'no_hp'   => ['required', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/', 'unique:pelanggans,no_hp,' . $pelanggan->id],
             'alamat'  => 'nullable|string|max:200',
             'catatan' => 'nullable|string|max:500',
         ]);

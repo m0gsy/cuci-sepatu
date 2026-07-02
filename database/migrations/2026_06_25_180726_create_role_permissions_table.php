@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use App\Models\RolePermission;
 
 return new class extends Migration
 {
@@ -18,14 +18,11 @@ return new class extends Migration
         });
 
         // Default: admin dapat akses orders, pelanggan, lokasi
-        $defaults = [
-            ['role' => 'admin', 'permission' => 'orders.manage'],
-            ['role' => 'admin', 'permission' => 'pelanggan'],
-            ['role' => 'admin', 'permission' => 'lokasi'],
-        ];
-        foreach ($defaults as $d) {
-            RolePermission::create($d);
-        }
+        DB::table('role_permissions')->insert([
+            ['role' => 'admin', 'permission' => 'orders.manage', 'created_at' => now(), 'updated_at' => now()],
+            ['role' => 'admin', 'permission' => 'pelanggan',     'created_at' => now(), 'updated_at' => now()],
+            ['role' => 'admin', 'permission' => 'lokasi',        'created_at' => now(), 'updated_at' => now()],
+        ]);
     }
 
     public function down(): void

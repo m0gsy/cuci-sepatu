@@ -23,8 +23,10 @@ return [
         ],
     ],
 
-    'fonnte' => [
-        'token' => env('FONNTE_TOKEN'),
+    'wablas' => [
+        'token'  => env('WABLAS_TOKEN'),
+        'secret' => env('WABLAS_SECRET'),
+        'url'    => env('WABLAS_URL', 'https://smg.wablas.com'),
     ],
 
 ];

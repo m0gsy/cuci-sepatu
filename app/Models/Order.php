@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Order extends Model
@@ -16,7 +17,8 @@ class Order extends Model
     const LEGACY_STATUSES = ['antri', 'proses', 'diambil'];
 
     protected $fillable = [
-        'no_order', 'token_publik', 'user_id', 'pelanggan_id', 'lokasi_id',
+        // no_order dan token_publik di-generate otomatis di boot(), tidak boleh di-set manual
+        'user_id', 'pelanggan_id', 'lokasi_id',
         'nama_pelanggan', 'no_hp', 'layanan_id', 'jenis_sepatu', 'merek', 'warna', 'kondisi',
         'jumlah_pasang', 'catatan', 'catatan_lokasi',
         'voucher_id', 'diskon',
@@ -32,7 +34,10 @@ class Order extends Model
     {
         parent::boot();
         static::creating(function ($order) {
-            $urutan = static::whereDate('created_at', today())->count() + 1;
+            // Lock-based atomic count to prevent duplicate no_order on concurrent creates
+            $urutan = DB::transaction(function () {
+                return static::whereDate('created_at', today())->lockForUpdate()->count() + 1;
+            });
             $order->no_order     = 'ORD-' . date('Ymd') . '-' . str_pad($urutan, 4, '0', STR_PAD_LEFT);
             $order->token_publik = Str::random(32);
             if (!isset($order->status)) {

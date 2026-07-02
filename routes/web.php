@@ -16,13 +16,14 @@ use App\Http\Controllers\FotoOrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\RewardController;
+use App\Http\Controllers\WaTemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('dashboard'));
 
 // Publik
-Route::get('/status/{token}',               [StatusController::class, 'show'])->name('status.order');
-Route::post('orders/{order}/review',        [ReviewController::class, 'store'])->name('orders.review.store');
+Route::get('/status/{token}',                           [StatusController::class, 'show'])->name('status.order');
+Route::post('orders/{order:token_publik}/review',       [ReviewController::class, 'store'])->middleware('throttle:5,60')->name('orders.review.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -37,17 +38,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('orders/create',                [OrderController::class, 'create'])->middleware('permission:orders.manage')->name('orders.create');
     Route::get('orders',                       [OrderController::class, 'index'])->name('orders.index');
     Route::post('orders',                      [OrderController::class, 'store'])->middleware('permission:orders.manage')->name('orders.store');
-    Route::get('orders/{order}',               [OrderController::class, 'show'])->name('orders.show');
+    Route::get('orders/{order}',               [OrderController::class, 'show'])->middleware('permission:orders.manage')->name('orders.show');
     Route::get('orders/{order}/edit',          [OrderController::class, 'edit'])->middleware('permission:orders.manage')->name('orders.edit');
     Route::put('orders/{order}',               [OrderController::class, 'update'])->middleware('permission:orders.manage')->name('orders.update');
-    Route::patch('orders/{order}/status',      [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::patch('orders/{order}/status',      [OrderController::class, 'updateStatus'])->middleware('permission:orders.manage')->name('orders.status');
     Route::patch('orders/{order}/lokasi',      [OrderController::class, 'updateLokasi'])->middleware('permission:lokasi')->name('orders.lokasi');
     Route::patch('orders/{order}/tandai-lunas',[OrderController::class, 'tandaiLunas'])->middleware('permission:orders.manage')->name('orders.lunas');
     Route::get('orders/{order}/nota',          [OrderController::class, 'cetakNota'])->middleware('permission:orders.manage')->name('orders.nota');
     Route::post('orders/{order}/kirim-wa',     [OrderController::class, 'kirimUlangWa'])->middleware('permission:orders.manage')->name('orders.wa');
     Route::post('orders/{order}/kirim-invoice',[OrderController::class, 'kirimInvoice'])->middleware('permission:orders.manage')->name('orders.invoice');
     // ── FOTO ────────────────────────────────────────────────────────────
-    Route::post('orders/{order}/foto',         [FotoOrderController::class, 'store'])->name('orders.foto.store');
+    Route::post('orders/{order}/foto',         [FotoOrderController::class, 'store'])->middleware('permission:orders.manage')->name('orders.foto.store');
     Route::delete('fotos/{foto}',              [FotoOrderController::class, 'destroy'])->middleware('permission:orders.manage')->name('orders.foto.destroy');
 
     // ── PELANGGAN ─────────────────────────────────────────────────────────
@@ -115,6 +116,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('operasional',                  [OperasionalController::class, 'index'])->middleware('permission:operasional')->name('operasional.index');
     Route::post('operasional',                 [OperasionalController::class, 'store'])->middleware('permission:operasional')->name('operasional.store');
     Route::delete('operasional/{operasional}', [OperasionalController::class, 'destroy'])->middleware('permission:operasional')->name('operasional.destroy');
+
+    // ── TEMPLATE WA ───────────────────────────────────────────────────────
+    Route::get('wa-templates',                         [WaTemplateController::class, 'index'])->middleware('permission:wa_template')->name('wa-templates.index');
+    Route::get('wa-templates/{waTemplate}/edit',       [WaTemplateController::class, 'edit'])->middleware('permission:wa_template')->name('wa-templates.edit');
+    Route::patch('wa-templates/{waTemplate}',          [WaTemplateController::class, 'update'])->middleware('permission:wa_template')->name('wa-templates.update');
+    Route::post('wa-templates/{waTemplate}/reset',     [WaTemplateController::class, 'reset'])->middleware('permission:wa_template')->name('wa-templates.reset');
 
     // ── KARYAWAN (owner only) ─────────────────────────────────────────────
     Route::get('karyawans',                              [KaryawanController::class, 'index'])->middleware('owner')->name('karyawans.index');

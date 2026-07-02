@@ -8,8 +8,9 @@ class Voucher extends Model
 {
     protected $fillable = [
         'kode', 'tipe', 'nilai', 'expired_at', 'min_transaksi',
-        'kuota', 'terpakai', 'aktif', 'deskripsi',
+        'kuota', 'aktif', 'deskripsi',
     ];
+    // terpakai dikelola via increment() saja — bukan mass-assignable
 
     protected $casts = [
         'expired_at' => 'date',

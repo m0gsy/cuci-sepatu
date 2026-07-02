@@ -49,7 +49,7 @@ class HppController extends Controller
     // Laporan profit/loss
     public function laporan(Request $request)
     {
-        $bulan = $request->bulan ?? now()->format('Y-m');
+        $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
         $orders = Order::with(['layanan', 'pembayaran', 'lokasi'])
