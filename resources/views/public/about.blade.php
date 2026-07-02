@@ -8,6 +8,7 @@
 @section('og_url', url('/about'))
 
 @section('schema')
+@verbatim
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -23,6 +24,7 @@
   }
 }
 </script>
+@endverbatim
 @endsection
 
 @section('content')
