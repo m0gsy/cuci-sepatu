@@ -50,7 +50,7 @@ class DashboardController extends Controller
 
         // ── Stats bulan ini ─────────────────────────────────────────────────
         $ordersBulanIni = Order::with(['layanan', 'pembayaran', 'lokasi.layanans'])
-            ->select('id', 'layanan_id', 'lokasi_id', 'jumlah_pasang', 'hpp')
+            ->select('id', 'layanan_id', 'lokasi_id', 'jumlah_pasang', 'harga_satuan', 'diskon', 'hpp')
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->whereIn('status', self::STATUS_HITUNG)
