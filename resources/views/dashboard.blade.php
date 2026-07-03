@@ -116,27 +116,89 @@
 </div>
 
 {{-- ── GRAFIK 7 HARI ────────────────────────────────────────────────── --}}
-@if($grafikHarian->count() > 0)
 @php
-    $maxHarian = $grafikHarian->max('total') ?: 1;
-    $days_id   = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    $harian7 = collect();
+    for ($i = 6; $i >= 0; $i--) {
+        $d     = now()->subDays($i)->toDateString();
+        $found = $grafikHarian->firstWhere('tanggal', $d);
+        $harian7->push(['tanggal' => $d, 'total' => $found ? (int)$found->total : 0]);
+    }
+    $maxHarian   = $harian7->max('total') ?: 1;
+    $totalMinggu = $harian7->sum('total');
+    $barMaxPx    = 96;
+    $days_id     = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
 @endphp
-<div class="bg-white border border-gray-100 rounded-xl p-5">
-    <p class="text-sm font-semibold text-gray-900 mb-4">Pendapatan 7 hari terakhir</p>
-    <div class="flex items-end gap-2 h-28">
-        @foreach($grafikHarian as $h)
-        @php $height = max(4, ($h->total / $maxHarian) * 88); @endphp
-        <div class="flex flex-col items-center gap-1 flex-1">
-            <span class="text-xs text-gray-400">{{ number_format($h->total/1000) }}k</span>
-            <div class="w-full bg-brand rounded-t" style="height: {{ $height }}px"></div>
-            <span class="text-xs text-gray-400">
-                {{ $days_id[\Carbon\Carbon::parse($h->tanggal)->dayOfWeek] }}
-            </span>
+<div class="bg-white border border-gray-100 rounded-xl p-5"
+     x-data="{ hov: null }">
+
+    {{-- Header row --}}
+    <div class="flex items-start justify-between mb-5">
+        <div>
+            <p class="text-sm font-semibold text-gray-900">Pendapatan 7 hari terakhir</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+                Total: <span class="font-medium text-gray-700">Rp {{ number_format($totalMinggu, 0, ',', '.') }}</span>
+            </p>
         </div>
-        @endforeach
+        {{-- Hover tooltip --}}
+        <div class="text-right transition-opacity duration-150"
+             :class="hov ? 'opacity-100' : 'opacity-0'">
+            <p class="text-sm font-semibold text-gray-900"
+               x-text="hov ? 'Rp ' + Number(hov.total).toLocaleString('id-ID') : ' '"></p>
+            <p class="text-xs text-gray-400" x-text="hov ? hov.label : ' '"></p>
+        </div>
+    </div>
+
+    {{-- Chart --}}
+    <div class="relative">
+
+        {{-- Horizontal grid lines --}}
+        <div class="absolute inset-x-0 pointer-events-none flex flex-col justify-between"
+             style="top:0; height: {{ $barMaxPx }}px">
+            @for($gi = 0; $gi < 5; $gi++)
+            <div class="border-t {{ $gi === 4 ? 'border-gray-200' : 'border-dashed border-gray-100' }}"></div>
+            @endfor
+        </div>
+
+        {{-- Bars + labels --}}
+        <div class="flex items-end gap-1.5">
+            @foreach($harian7 as $idx => $h)
+            @php
+                $barH    = $maxHarian > 0 ? max(3, round(($h['total'] / $maxHarian) * $barMaxPx)) : 3;
+                $isToday = $h['tanggal'] === now()->toDateString();
+                $dayLbl  = $days_id[\Carbon\Carbon::parse($h['tanggal'])->dayOfWeek];
+                $dateLbl = \Carbon\Carbon::parse($h['tanggal'])->isoFormat('D MMM');
+                $delay   = round($idx * 0.05, 2);
+            @endphp
+            <div class="flex flex-col items-center gap-1.5 flex-1 cursor-default"
+                 @mouseenter="hov = { total: {{ $h['total'] }}, label: '{{ $dayLbl }}, {{ $dateLbl }}' }"
+                 @mouseleave="hov = null">
+
+                {{-- Bar --}}
+                <div class="w-full rounded-t-sm overflow-hidden"
+                     style="height: {{ $barH }}px">
+                    <div class="w-full h-full rounded-t-sm"
+                         :class="hov && hov.label === '{{ $dayLbl }}, {{ $dateLbl }}'
+                             ? 'bg-brand'
+                             : '{{ $isToday ? 'bg-brand' : ($h['total'] > 0 ? 'bg-brand/30' : 'bg-gray-100') }}'"
+                         x-init="$el.style.transform = 'scaleY(0)';
+                                 $el.style.transformOrigin = 'bottom';
+                                 setTimeout(() => {
+                                     $el.style.transition = 'transform 0.45s cubic-bezier(0.34,1.1,0.64,1)';
+                                     $el.style.transform  = 'scaleY(1)';
+                                 }, {{ $idx * 50 }})">
+                    </div>
+                </div>
+
+                {{-- Day label --}}
+                <span class="text-[10px] leading-none select-none
+                    {{ $isToday ? 'text-brand font-semibold' : 'text-gray-400' }}">
+                    {{ $dayLbl }}
+                </span>
+            </div>
+            @endforeach
+        </div>
     </div>
 </div>
-@endif
 
 {{-- ── TOP ITEMS (seperti foto 2) ──────────────────────────────────── --}}
 @if($topItems->count() > 0)
