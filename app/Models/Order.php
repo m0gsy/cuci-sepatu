@@ -20,7 +20,7 @@ class Order extends Model
         // no_order dan token_publik di-generate otomatis di boot(), tidak boleh di-set manual
         'user_id', 'pelanggan_id', 'lokasi_id',
         'nama_pelanggan', 'no_hp', 'layanan_id', 'jenis_sepatu', 'merek', 'warna', 'kondisi',
-        'jumlah_pasang', 'catatan', 'catatan_lokasi',
+        'jumlah_pasang', 'harga_satuan', 'catatan', 'catatan_lokasi',
         'voucher_id', 'diskon',
         'status', 'estimasi_selesai', 'selesai_pada', 'hpp',
     ];
@@ -60,6 +60,10 @@ class Order extends Model
 
     public function getHargaEfektifAttribute(): int
     {
+        if ($this->harga_satuan !== null) {
+            return $this->harga_satuan;
+        }
+        // backward compat: order lama sebelum kolom harga_satuan ada
         $hargaLayanan = $this->layanan->harga ?? 0;
         if ($this->lokasi) {
             return $this->lokasi->hitungHarga($hargaLayanan, $this->layanan_id);

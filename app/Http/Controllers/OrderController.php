@@ -63,8 +63,9 @@ class OrderController extends Controller
             'voucher_kode'     => 'nullable|string|max:30',
         ]);
 
-        $layanan = Layanan::findOrFail($data['layanan_id']);
-        $total   = $layanan->harga * $data['jumlah_pasang'];
+        $layanan      = Layanan::findOrFail($data['layanan_id']);
+        $hargaSatuan  = $layanan->harga;
+        $total        = $hargaSatuan * $data['jumlah_pasang'];
 
         if (!empty($data['lokasi_id'])) {
             $lokasi = Lokasi::with('layanans')->find($data['lokasi_id']);
@@ -114,6 +115,7 @@ class OrderController extends Controller
             'warna'            => $data['warna'] ?? null,
             'kondisi'          => $data['kondisi'] ?? null,
             'jumlah_pasang'    => $data['jumlah_pasang'],
+            'harga_satuan'     => $hargaSatuan,
             'catatan'          => $data['catatan'] ?? null,
             'catatan_lokasi'   => $data['catatan_lokasi'] ?? null,
             'voucher_id'       => $voucherId,
@@ -187,8 +189,9 @@ class OrderController extends Controller
             'catatan_lokasi'   => 'nullable|string|max:200',
         ]);
 
-        $layanan = Layanan::findOrFail($data['layanan_id']);
-        $total   = $layanan->harga * $data['jumlah_pasang'];
+        $layanan     = Layanan::findOrFail($data['layanan_id']);
+        $hargaSatuan = $layanan->harga;
+        $total       = $hargaSatuan * $data['jumlah_pasang'];
         if (!empty($data['lokasi_id'])) {
             $lokasi = Lokasi::with('layanans')->find($data['lokasi_id']);
             if ($lokasi) {
@@ -200,6 +203,7 @@ class OrderController extends Controller
         $oldLayananId = $order->layanan_id;
         $oldJumlah    = $order->jumlah_pasang;
 
+        $data['harga_satuan'] = $hargaSatuan;
         $order->update($data);
         $order->pembayaran?->update(['total' => $total - $order->diskon]);
 
