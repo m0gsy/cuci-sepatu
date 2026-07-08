@@ -149,13 +149,16 @@
     | Siap diambil | Status diubah ke *Siap diambil* | Notif selesai, total tagihan, poin earned + link tracking |
     | Invoice | Manual (tombol di detail order) | Rincian tagihan lengkap + link nota PDF |
 
-    > Pastikan device Fonnte dalam status **Connected** agar WA bisa terkirim.
+    > Pastikan akun Twilio Anda memiliki saldo yang cukup agar WA bisa terkirim.
 
     ---
 
-    ## Pengaturan Fonnte (WhatsApp Gateway)
+    ## Pengaturan Twilio (WhatsApp Gateway)
 
-    1. Login ke fonnte.com → menu **Device**
-    2. Scan QR Code dengan WhatsApp di HP
-    3. Status harus **Connected** sebelum notifikasi bisa berjalan
-    4. Isi token di file `.env`: `FONNTE_TOKEN=xxxxx`
+    1. Login ke Twilio Console.
+    2. Dapatkan `Account SID` dan `Auth Token` dari dashboard.
+    3. Hubungkan nomor pengirim WhatsApp Anda (atau gunakan Sandbox Twilio).
+    4. Isi konfigurasi di file `.env`:
+       - `TWILIO_SID=xxxxx`
+       - `TWILIO_AUTH_TOKEN=xxxxx`
+       - `TWILIO_WHATSAPP_FROM=+14155238886`
