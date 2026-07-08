@@ -6,11 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class Stok extends Model
 {
-    protected $fillable = ['nama', 'satuan', 'stok_saat_ini', 'stok_minimum', 'harga_satuan', 'catatan'];
+    protected $fillable = ['bahan_id', 'nama', 'satuan', 'stok_saat_ini', 'stok_minimum', 'harga_satuan', 'catatan'];
+
+    public function bahan()
+    {
+        return $this->belongsTo(Bahan::class, 'bahan_id');
+    }
 
     public function mutasis()
     {
         return $this->hasMany(StokMutasi::class);
+    }
+
+    public function getNamaAttribute()
+    {
+        return $this->bahan->nama ?? $this->attributes['nama'] ?? '';
+    }
+
+    public function getSatuanAttribute()
+    {
+        return $this->bahan->satuan ?? $this->attributes['satuan'] ?? '';
+    }
+
+    public function getHargaSatuanAttribute()
+    {
+        return $this->bahan->harga_satuan ?? $this->attributes['harga_satuan'] ?? 0;
     }
 
     public function getStatusStokAttribute(): string
@@ -31,6 +51,6 @@ class Stok extends Model
 
     public function getNilaiStokAttribute(): int
     {
-        return (int)($this->stok_saat_ini * $this->harga_satuan);
+        return (int)round($this->stok_saat_ini * $this->harga_satuan);
     }
 }

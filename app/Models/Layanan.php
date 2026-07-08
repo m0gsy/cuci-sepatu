@@ -6,12 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Layanan extends Model
 {
-    protected $fillable = ['nama', 'harga', 'estimasi_hari', 'aktif'];
+    protected $fillable = ['kategori_layanan_id', 'nama', 'harga', 'estimasi_nilai', 'estimasi_satuan', 'aktif'];
     protected $casts    = ['aktif' => 'boolean'];
+
+    public function kategoriLayanan()
+    {
+        return $this->belongsTo(KategoriLayanan::class, 'kategori_layanan_id');
+    }
+
+    public function recipes()
+    {
+        return $this->hasMany(LayananRecipe::class, 'layanan_id');
+    }
 
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'layanan_id');
     }
 
     public function hppKomponen()
@@ -24,10 +39,12 @@ class Layanan extends Model
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
     }
 
-    // Total HPP dari semua komponen
+    // Total HPP dari recipe components
     public function getTotalHppAttribute(): int
     {
-        return $this->hppKomponen->sum('biaya');
+        return (int)round($this->recipes->sum(function ($recipe) {
+            return $recipe->jumlah_penggunaan * ($recipe->bahan->harga_satuan ?? 0);
+        }));
     }
 
     // Gross margin standar per layanan

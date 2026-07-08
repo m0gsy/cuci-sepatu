@@ -260,7 +260,11 @@
                        class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-800">{{ $o->nama_pelanggan }}</td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ $o->layanan->nama }}</td>
+                <td class="px-4 py-3 text-xs text-gray-500">
+                    {{ $o->items->isNotEmpty()
+                        ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                        : ($o->layanan->nama ?? '—') }}
+                </td>
                 <td class="px-4 py-3">
                     @if($o->lokasi)
                     <span class="text-xs font-mono font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">

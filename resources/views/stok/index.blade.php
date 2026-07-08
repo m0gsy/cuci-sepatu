@@ -2,10 +2,10 @@
 @section('title', 'Stok bahan baku')
 
 @section('header-actions')
-<button onclick="document.getElementById('modal-tambah').classList.remove('hidden')"
+<a href="{{ route('bahans.index') }}"
         class="bg-brand text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-brand-hover transition-colors">
-    + Tambah bahan
-</button>
+    + Kelola Bahan Baku
+</a>
 @endsection
 
 @section('content')
@@ -30,13 +30,13 @@
                         {{ ucfirst($s->status_stok) }}
                     </span>
                 </div>
-                <p class="text-xs text-gray-500">Min. {{ $s->stok_minimum }} {{ $s->satuan }} · Rp {{ number_format($s->harga_satuan, 0, ',', '.') }} / {{ $s->satuan }}</p>
+                <p class="text-xs text-gray-500">Min. {{ $s->stok_minimum }} {{ $s->satuan }} · Rp {{ number_format($s->harga_satuan, 2, ',', '.') }} / {{ $s->satuan }}</p>
             </div>
         </div>
 
         <div class="flex items-center gap-6 text-center">
             <div>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($s->stok_saat_ini, 1) }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ number_format($s->stok_saat_ini, 2, ',', '.') }}</p>
                 <p class="text-xs text-gray-400">{{ $s->satuan }}</p>
             </div>
             <div>
@@ -94,30 +94,20 @@
         </form>
     </div>
 
-    {{-- Form edit bahan --}}
+    {{-- Form edit stok minimum & catatan --}}
     <div x-show="edit" class="mt-4 pt-4 border-t border-gray-100">
         <form method="POST" action="{{ route('stok.update', $s) }}">
             @csrf @method('PUT')
-            <div class="grid grid-cols-4 gap-3 mb-3">
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Nama</label>
-                    <input type="text" name="nama" value="{{ $s->nama }}"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Satuan</label>
-                    <input type="text" name="satuan" value="{{ $s->satuan }}"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                </div>
+            <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Stok minimum</label>
                     <input type="number" name="stok_minimum" value="{{ $s->stok_minimum }}" step="0.01"
                            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Harga / satuan</label>
-                    <input type="number" name="harga_satuan" value="{{ $s->harga_satuan }}"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
+                    <label class="block text-xs text-gray-500 mb-1">Catatan</label>
+                    <input type="text" name="catatan" value="{{ $s->catatan }}"
+                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" placeholder="Catatan opsional">
                 </div>
             </div>
             <div class="flex gap-2">
@@ -135,49 +125,4 @@
 </div>
 
 </div>
-
-{{-- Modal tambah bahan --}}
-<div id="modal-tambah" class="hidden fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl border border-gray-100 p-6 w-full max-w-lg">
-        <div class="flex items-center justify-between mb-5">
-            <h2 class="text-sm font-semibold text-gray-900">Tambah bahan baku</h2>
-            <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"
-                    class="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
-        </div>
-        <form method="POST" action="{{ route('stok.store') }}">
-            @csrf
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="col-span-2">
-                    <label class="block text-xs text-gray-500 mb-1.5">Nama bahan</label>
-                    <input type="text" name="nama" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" placeholder="Sabun cuci khusus" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Satuan</label>
-                    <input type="text" name="satuan" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" placeholder="liter / pcs / botol" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Stok awal</label>
-                    <input type="number" name="stok_saat_ini" step="0.01" min="0" value="0"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Stok minimum</label>
-                    <input type="number" name="stok_minimum" step="0.01" min="0" value="5"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Harga per satuan (Rp)</label>
-                    <input type="number" name="harga_satuan" min="0" value="0"
-                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <button type="button" onclick="document.getElementById('modal-tambah').classList.add('hidden')"
-                        class="flex-1 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
-                <button type="submit" class="flex-1 py-2.5 text-sm bg-brand text-white rounded-lg hover:bg-brand-hover">Simpan</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 @endsection

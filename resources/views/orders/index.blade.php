@@ -18,13 +18,12 @@
             class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
         <option value="">Semua status</option>
         @foreach([
-            'diterima'     => 'Diterima',
-            'inspeksi'     => 'Inspeksi',
-            'dicuci'       => 'Dicuci',
-            'kering'       => 'Pengeringan',
-            'finishing'    => 'Finishing',
-            'siap_diambil' => 'Siap Diambil',
-            'selesai'      => 'Diambil',
+            'draft'               => 'Draft',
+            'menunggu_pembayaran' => 'Menunggu Pembayaran',
+            'diproses'            => 'Diproses',
+            'siap_diambil'        => 'Siap Diambil',
+            'selesai'             => 'Selesai',
+            'batal'               => 'Batal',
         ] as $val => $label)
             <option value="{{ $val }}" {{ request('status') === $val ? 'selected' : '' }}>{{ $label }}</option>
         @endforeach
@@ -62,8 +61,8 @@
         @forelse($orders as $o)
             <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                 <td class="px-4 py-3 whitespace-nowrap">
-                    <a href="{{ route('orders.show', $o) }}"
-                       class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
+                     <a href="{{ route('orders.show', $o) }}"
+                        class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
                 </td>
                 <td class="px-4 py-3">
                     @if($o->pelanggan && auth()->user()->hasPermission('pelanggan'))
@@ -72,9 +71,15 @@
                     @else
                     <p class="text-sm font-medium text-gray-900">{{ $o->nama_pelanggan }}</p>
                     @endif
-                    <p class="text-xs text-gray-400">{{ $o->no_hp }}</p>
+                    <p class="text-xs text-gray-400">{{ $o->no_hp_display }}</p>
                 </td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ $o->layanan->nama }}</td>
+                <td class="px-4 py-3 text-xs text-gray-500">
+                    @if($o->items->count() > 1)
+                        {{ $o->items->first()->layanan->nama ?? '—' }} (+{{ $o->items->count() - 1 }} lainnya)
+                    @else
+                        {{ $o->items->first()->layanan->nama ?? '—' }}
+                    @endif
+                </td>
                 <td class="px-4 py-3 whitespace-nowrap">
                     @if($o->lokasi)
                     <span class="text-xs font-mono font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
@@ -85,13 +90,13 @@
                     @endif
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">
-                    <span class="text-xs text-gray-500">{{ $o->estimasi_selesai->format('d M Y') }}</span>
+                    <span class="text-xs text-gray-500">{{ $o->estimasi_selesai?->format('d M Y') ?? '—' }}</span>
                     @if($o->terlambat)
                     <span class="block text-xs text-red-500 font-medium">Terlambat</span>
                     @endif
                 </td>
                 <td class="px-4 py-3 text-sm font-medium text-right text-gray-900 whitespace-nowrap">
-                    {{ $o->pembayaran?->total_format ?? '—' }}
+                    Rp {{ number_format($o->pembayaran?->total ?? 0, 0, ',', '.') }}
                 </td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     @if($o->hpp > 0)
@@ -105,8 +110,8 @@
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">
                     @php $s = $o->pembayaran?->status; @endphp
-                    <span class="text-xs {{ $s === 'lunas' ? 'text-green-700' : 'text-amber-700' }}">
-                        {{ ucfirst($s ?? '—') }}
+                    <span class="text-xs font-medium px-2 py-0.5 rounded {{ $s === 'selesai' ? 'text-green-700 bg-green-50' : 'text-amber-700 bg-amber-50' }}">
+                        {{ $s === 'selesai' ? 'Selesai' : 'Belum Selesai' }}
                     </span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">

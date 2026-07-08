@@ -10,16 +10,16 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     // Status "masih dikerjakan" — lama + baru
-    const STATUS_AKTIF = ['antri', 'proses', 'diterima', 'inspeksi', 'dicuci', 'kering', 'finishing'];
+    const STATUS_AKTIF = ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil'];
     // Status "sudah selesai/diambil"
-    const STATUS_DONE  = ['diambil', 'selesai'];
-    // Status yang dihitung dalam pendapatan (tidak antri/diterima saja)
-    const STATUS_HITUNG = ['proses', 'selesai', 'diambil', 'inspeksi', 'dicuci', 'kering', 'finishing', 'siap_diambil'];
+    const STATUS_DONE  = ['selesai'];
+    // Status yang dihitung dalam pendapatan
+    const STATUS_HITUNG = ['diproses', 'siap_diambil', 'selesai'];
 
     public function index()
     {
         if (auth()->user()->isCleaner()) {
-            $aktif = Order::with(['layanan', 'lokasi.layanans'])
+            $aktif = Order::with(['items.layanan', 'lokasi'])
                 ->whereIn('status', self::STATUS_AKTIF)
                 ->latest()->get();
             $terlambat = $aktif->filter(fn($o) => $o->estimasi_selesai?->isPast())->count();
@@ -27,18 +27,14 @@ class DashboardController extends Controller
         }
 
         // ── Stats hari ini ──────────────────────────────────────────────────
+        $todayOrders = Order::whereDate('created_at', today())
+            ->whereIn('status', self::STATUS_HITUNG)
+            ->get();
+
         $stats = [
-            'pendapatan_hari_ini' => Pembayaran::whereDate('dibayar_pada', today())
-                ->where('status', 'lunas')->sum('total'),
-            'hpp_hari_ini'        => Order::whereDate('created_at', today())
-                ->whereIn('status', self::STATUS_HITUNG)->sum('hpp'),
-            'gross_profit_hari'   => (int) DB::table('orders')
-                ->leftJoin('pembayarans', 'pembayarans.order_id', '=', 'orders.id')
-                ->join('layanans', 'layanans.id', '=', 'orders.layanan_id')
-                ->whereDate('orders.created_at', today())
-                ->whereIn('orders.status', self::STATUS_HITUNG)
-                ->selectRaw('COALESCE(SUM(COALESCE(pembayarans.total, layanans.harga * orders.jumlah_pasang) - orders.hpp), 0) as profit')
-                ->value('profit'),
+            'pendapatan_hari_ini' => $todayOrders->sum('net_sales'),
+            'hpp_hari_ini'        => $todayOrders->sum('hpp'),
+            'gross_profit_hari'   => $todayOrders->sum('gross_profit'),
             'order_hari_ini'      => Order::whereDate('created_at', today())->count(),
             'dalam_antrian'       => Order::whereIn('status', self::STATUS_AKTIF)->count(),
             'siap_diambil'        => Order::where('status', 'siap_diambil')->count(),
@@ -49,8 +45,7 @@ class DashboardController extends Controller
             : 0;
 
         // ── Stats bulan ini ─────────────────────────────────────────────────
-        $ordersBulanIni = Order::with(['layanan', 'pembayaran', 'lokasi.layanans'])
-            ->select('id', 'layanan_id', 'lokasi_id', 'jumlah_pasang', 'harga_satuan', 'diskon', 'hpp')
+        $ordersBulanIni = Order::with(['items.layanan', 'pembayaran'])
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->whereIn('status', self::STATUS_HITUNG)
@@ -58,9 +53,7 @@ class DashboardController extends Controller
 
         $statsBulan = [
             'gross_sales'  => $ordersBulanIni->sum('gross_sales'),
-            'net_sales'    => Pembayaran::whereYear('dibayar_pada', now()->year)
-                ->whereMonth('dibayar_pada', now()->month)
-                ->where('status', 'lunas')->sum('total'),
+            'net_sales'    => $ordersBulanIni->sum('net_sales'),
             'hpp'          => $ordersBulanIni->sum('hpp'),
             'gross_profit' => $ordersBulanIni->sum('gross_profit'),
             'transactions' => $ordersBulanIni->count(),
@@ -74,51 +67,63 @@ class DashboardController extends Controller
         $statsBulan['diskon'] = $statsBulan['gross_sales'] - $statsBulan['net_sales'];
 
         // ── Order terbaru ───────────────────────────────────────────────────
-        $orders_terbaru = Order::with(['layanan', 'lokasi.layanans', 'pembayaran'])->latest()->take(8)->get();
+        $orders_terbaru = Order::with(['items.layanan', 'lokasi', 'pembayaran'])->latest()->take(8)->get();
 
         $terlambat = Order::whereIn('status', self::STATUS_AKTIF)
             ->where('estimasi_selesai', '<', today())->count();
 
         // ── Grafik harian 7 hari ────────────────────────────────────────────
-        $grafikHarian = Pembayaran::where('status', 'lunas')
+        $grafikHarian = Pembayaran::where('status', 'selesai')
             ->where('dibayar_pada', '>=', now()->subDays(6)->startOfDay())
             ->select(DB::raw('DATE(dibayar_pada) as tanggal'), DB::raw('SUM(total) as total'))
             ->groupBy('tanggal')->orderBy('tanggal')->get();
 
         // ── Grafik bulanan 12 bulan ─────────────────────────────────────────
-        $grafikPendapatan = Pembayaran::where('status', 'lunas')
+        $driver = DB::getDriverName();
+        $yearExpression = $driver === 'sqlite' ? "strftime('%Y', dibayar_pada)" : "YEAR(dibayar_pada)";
+        $monthExpression = $driver === 'sqlite' ? "CAST(strftime('%m', dibayar_pada) as integer)" : "MONTH(dibayar_pada)";
+
+        $grafikPendapatan = Pembayaran::where('status', 'selesai')
             ->where('dibayar_pada', '>=', now()->subMonths(11)->startOfMonth())
             ->select(
-                DB::raw('YEAR(dibayar_pada) as tahun'),
-                DB::raw('MONTH(dibayar_pada) as bulan'),
+                DB::raw("$yearExpression as tahun"),
+                DB::raw("$monthExpression as bulan"),
                 DB::raw('SUM(total) as total'),
                 DB::raw('COUNT(*) as jumlah_order')
             )
             ->groupBy('tahun', 'bulan')
             ->orderBy('tahun')->orderBy('bulan')->get();
 
-        // ── Top layanan bulan ini ────────────────────────────────────────────
-        $topItems = $ordersBulanIni
+        // ── Top layanan bulan ini (dari order_items untuk akurasi) ──────────
+        // Group by layanan via items (multi-item aware)
+        $allItems = $ordersBulanIni->flatMap(fn($o) => $o->items);
+        $topItems = $allItems
             ->groupBy('layanan_id')
             ->map(function ($items) {
                 $layanan = $items->first()->layanan;
+                if (!$layanan) return null;
+                $totalHarga = $items->sum(fn($i) => $i->harga_satuan * $i->jumlah_pasang);
+                $totalHpp   = $items->sum('hpp');
+                $profit     = $totalHarga - $totalHpp;
                 return [
                     'nama'         => $layanan->nama,
                     'item_sold'    => $items->sum('jumlah_pasang'),
-                    'gross_sales'  => $items->sum('gross_sales'),
-                    'net_sales'    => $items->sum('net_sales'),
-                    'gross_profit' => $items->sum('gross_profit'),
-                    'margin'       => $items->sum('net_sales') > 0
-                        ? round(($items->sum('gross_profit') / $items->sum('net_sales')) * 100, 1)
+                    'gross_sales'  => $totalHarga,
+                    'net_sales'    => $totalHarga,
+                    'gross_profit' => $profit,
+                    'margin'       => $totalHarga > 0
+                        ? round(($profit / $totalHarga) * 100, 1)
                         : 0,
                 ];
             })
+            ->filter() // buang null (layanan dihapus)
             ->sortByDesc('gross_sales')
             ->values()
             ->take(10);
 
-        $stokMenipis = Stok::orderBy('nama')->get()
-            ->filter(fn($s) => $s->status_stok !== 'aman');
+        $stokMenipis = Stok::with('bahan')->get()
+            ->filter(fn($s) => $s->bahan && $s->bahan->aktif && $s->status_stok !== 'aman')
+            ->sortBy(fn($s) => $s->nama);
 
         return view('dashboard', compact(
             'stats', 'statsBulan', 'orders_terbaru', 'terlambat',

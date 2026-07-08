@@ -18,24 +18,29 @@ class LaporanController extends Controller
     {
         [$tahun, $bln] = explode('-', $bulan);
 
-        $rekap = Layanan::withCount(['orders' => fn($q) =>
-                $q->whereYear('orders.created_at', $tahun)
+        $rekap = Layanan::withCount(['orderItems as orders_count' => fn($q) =>
+                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
+                  ->whereYear('orders.created_at', $tahun)
                   ->whereMonth('orders.created_at', $bln)
+                  ->where('orders.status', '!=', 'batal')
             ])
-            ->withSum(['orders as total_jumlah_pasang' => fn($q) =>
-                $q->whereYear('orders.created_at', $tahun)
+            ->withSum(['orderItems as total_jumlah_pasang' => fn($q) =>
+                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
+                  ->whereYear('orders.created_at', $tahun)
                   ->whereMonth('orders.created_at', $bln)
-            ], 'orders.jumlah_pasang')
-            ->withSum(['orders as total_pendapatan' => fn($q) =>
-                $q->whereYear('orders.created_at', $tahun)
+                  ->where('orders.status', '!=', 'batal')
+            ], 'order_items.jumlah_pasang')
+            ->withSum(['orderItems as total_pendapatan' => fn($q) =>
+                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
+                  ->whereYear('orders.created_at', $tahun)
                   ->whereMonth('orders.created_at', $bln)
-                  ->join('pembayarans', 'orders.id', '=', 'pembayarans.order_id')
-            ], 'pembayarans.total')
+                  ->where('orders.status', '!=', 'batal')
+            ], \Illuminate\Support\Facades\DB::raw('order_items.harga_satuan * order_items.jumlah_pasang'))
             ->get();
 
         $total_bulan = Pembayaran::whereYear('pembayarans.dibayar_pada', $tahun)
             ->whereMonth('pembayarans.dibayar_pada', $bln)
-            ->where('status', 'lunas')->sum('total');
+            ->where('status', 'selesai')->sum('total');
 
         return compact('rekap', 'total_bulan', 'bulan');
     }
@@ -45,9 +50,10 @@ class LaporanController extends Controller
         [$tahun, $bln] = explode('-', $bulan);
         $data = $this->getRekapData($bulan);
 
-        $data['orders'] = \App\Models\Order::with(['layanan', 'pembayaran'])
+        $data['orders'] = \App\Models\Order::with(['items.layanan', 'pembayaran'])
             ->whereYear('orders.created_at', $tahun)
             ->whereMonth('orders.created_at', $bln)
+            ->where('status', '!=', 'batal')
             ->latest()->get();
 
         return $data;
@@ -59,9 +65,10 @@ class LaporanController extends Controller
         [$tahun, $bln] = explode('-', $bulan);
 
         $data           = $this->getRekapData($bulan);
-        $data['orders'] = \App\Models\Order::with(['layanan', 'pembayaran'])
+        $data['orders'] = \App\Models\Order::with(['items.layanan', 'pembayaran'])
             ->whereYear('orders.created_at', $tahun)
             ->whereMonth('orders.created_at', $bln)
+            ->where('status', '!=', 'batal')
             ->latest()
             ->paginate(50)
             ->withQueryString();
@@ -184,10 +191,12 @@ class LaporanController extends Controller
         $ws2->getRowDimension(2)->setRowHeight(22);
 
         $statusColors = [
-            'antri'   => ['bg' => 'FEF3C7', 'txt' => '92400E'],
-            'proses'  => ['bg' => 'DBEAFE', 'txt' => '1E40AF'],
-            'selesai' => ['bg' => 'D1FAE5', 'txt' => '065F46'],
-            'diambil' => ['bg' => 'F3F4F6', 'txt' => '444441'],
+            'draft'               => ['bg' => 'F3F4F6', 'txt' => '475569'],
+            'menunggu_pembayaran' => ['bg' => 'FEF3C7', 'txt' => '92400E'],
+            'diproses'            => ['bg' => 'DBEAFE', 'txt' => '1E40AF'],
+            'siap_diambil'        => ['bg' => 'D1FAE5', 'txt' => '065F46'],
+            'selesai'             => ['bg' => 'E0F2FE', 'txt' => '0369A1'],
+            'batal'               => ['bg' => 'FEE2E2', 'txt' => 'B91C1C'],
         ];
 
         foreach ($orders as $i => $o) {
@@ -197,7 +206,10 @@ class LaporanController extends Controller
             $ws2->setCellValue("A{$row}", $o->no_order);
             $ws2->setCellValue("B{$row}", $o->created_at->format('d/m/Y'));
             $ws2->setCellValue("C{$row}", $o->nama_pelanggan);
-            $ws2->setCellValue("D{$row}", $o->layanan->nama);
+            $layananNama = $o->items->isNotEmpty()
+                ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                : ($o->layanan->nama ?? '—');
+            $ws2->setCellValue("D{$row}", $layananNama);
             $ws2->setCellValue("E{$row}", $o->jumlah_pasang);
             $ws2->setCellValue("F{$row}", $o->pembayaran?->total ?? 0);
             $ws2->setCellValue("G{$row}", ucfirst($o->status));

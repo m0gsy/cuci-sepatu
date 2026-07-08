@@ -39,7 +39,7 @@
             <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                 <td class="px-5 py-3">
                     <p class="text-sm font-medium text-gray-900">{{ $p->nama }}</p>
-                    <p class="text-xs text-gray-400">{{ $p->no_hp }}</p>
+                    <p class="text-xs text-gray-400">{{ $p->no_hp_display }}</p>
                 </td>
                 <td class="px-5 py-3 text-center">
                     <span class="text-sm font-medium">{{ $p->orders_count }}</span>
@@ -58,7 +58,11 @@
                 <td class="px-5 py-3 text-xs text-gray-500">
                     @if($p->latestOrder)
                         {{ $p->latestOrder->created_at->isoFormat('D MMM Y') }}
-                        <span class="block text-gray-400">{{ $p->latestOrder->layanan?->nama }}</span>
+                        <span class="block text-gray-400">
+                            {{ $p->latestOrder->items->isNotEmpty()
+                                ? $p->latestOrder->items->first()->layanan->nama ?? '—'
+                                : ($p->latestOrder->layanan?->nama ?? '—') }}
+                        </span>
                     @else
                         <span class="text-gray-300">—</span>
                     @endif

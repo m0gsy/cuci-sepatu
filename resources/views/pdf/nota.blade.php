@@ -52,10 +52,6 @@ table.calc td:last-child { text-align: right; }
     font-size: 10px;
     font-weight: bold;
 }
-.status-antri   { background: #FEF3C7; color: #92400E; }
-.status-proses  { background: #DBEAFE; color: #1E40AF; }
-.status-selesai { background: #D1FAE5; color: #065F46; }
-.status-diambil { background: #F3F4F6; color: #374151; }
 
 .footer {
     font-size: 9px;
@@ -90,23 +86,11 @@ table.calc td:last-child { text-align: right; }
     </tr>
     <tr>
         <td>No. HP</td>
-        <td>{{ $order->no_hp }}</td>
-    </tr>
-    <tr>
-        <td>Jenis</td>
-        <td>{{ $order->jenis_sepatu }}</td>
-    </tr>
-    <tr>
-        <td>Jumlah</td>
-        <td>{{ $order->jumlah_pasang }} Pasang</td>
-    </tr>
-    <tr>
-        <td>Layanan</td>
-        <td class="bold">{{ $order->layanan->nama }}</td>
+        <td>{{ $order->no_hp_display }}</td>
     </tr>
     <tr>
         <td>Estimasi</td>
-        <td>{{ $order->estimasi_selesai->isoFormat('D MMMM Y') }}</td>
+        <td>{{ $order->estimasi_selesai?->isoFormat('D MMMM Y, HH:mm') ?? '—' }}</td>
     </tr>
     @if($order->catatan)
     <tr>
@@ -118,32 +102,73 @@ table.calc td:last-child { text-align: right; }
 
 <hr class="divider">
 
-<table class="calc">
-    <tr>
-        <td class="muted">Harga satuan</td>
-        <td>Rp {{ number_format($order->harga_efektif, 0, ',', '.') }}</td>
+<table class="calc" style="width:100%; border-bottom: 1px dashed #ccc; padding-bottom: 2mm; margin-bottom: 2mm;">
+    <tr class="bold" style="font-size: 8px; color: #888;">
+        <td style="width: 45%;">Layanan / Sepatu</td>
+        <td style="width: 15%; text-align: center;">Jumlah</td>
+        <td style="width: 40%; text-align: right;">Total</td>
     </tr>
+    @forelse($order->items as $item)
     <tr>
-        <td class="muted">Jumlah Pasang</td>
-        <td>× {{ $order->jumlah_pasang }}</td>
+        <td style="padding: 1.5mm 0; font-size: 10px;">
+            <span class="bold">{{ $item->layanan->nama }}</span>
+            <br><span class="muted">{{ $item->jenisBarang->nama }} · {{ $item->merek ?? '—' }} ({{ $item->warna ?? '—' }})</span>
+        </td>
+        <td style="text-align: center; padding: 1.5mm 0; font-size: 10.5px;">{{ $item->jumlah_pasang }}</td>
+        <td style="text-align: right; padding: 1.5mm 0; font-size: 10.5px;">Rp {{ number_format($item->harga_satuan * $item->jumlah_pasang, 0, ',', '.') }}</td>
+    </tr>
+    @empty
+    {{-- Fallback untuk order lama (sebelum sistem multi-item) --}}
+    @if($order->layanan_id || $order->jenis_sepatu || $order->jumlah_pasang)
+    <tr>
+        <td style="padding: 1.5mm 0; font-size: 10px;">
+            <span class="bold">{{ $order->layanan->nama ?? '—' }}</span>
+            <br><span class="muted">{{ $order->jenis_sepatu ?? '—' }} · {{ $order->merek ?? '—' }} ({{ $order->warna ?? '—' }})</span>
+        </td>
+        <td style="text-align: center; padding: 1.5mm 0; font-size: 10.5px;">{{ $order->jumlah_pasang ?? 0 }}</td>
+        <td style="text-align: right; padding: 1.5mm 0; font-size: 10.5px;">Rp {{ number_format(($order->harga_satuan ?? 0) * ($order->jumlah_pasang ?? 0), 0, ',', '.') }}</td>
+    </tr>
+    @else
+    <tr>
+        <td colspan="3" style="padding: 3mm 0; text-align: center; color: #aaa; font-size: 10px;">Belum ada item sepatu.</td>
+    </tr>
+    @endif
+    @endforelse
+</table>
+
+@if($order->diskon > 0)
+<table class="calc" style="margin-top: 1mm; margin-bottom: 1mm;">
+    <tr>
+        <td class="muted">Diskon Voucher ({{ $order->voucher->kode ?? '' }})</td>
+        <td class="right" style="color: green; font-size: 10.5px;">- Rp {{ number_format($order->diskon, 0, ',', '.') }}</td>
     </tr>
 </table>
+@endif
+
+@if(($order->diskon_poin ?? 0) > 0)
+<table class="calc" style="margin-top: 1mm; margin-bottom: 1mm;">
+    <tr>
+        <td class="muted">Diskon Poin ({{ $order->poin_digunakan }} poin)</td>
+        <td class="right" style="color: green; font-size: 10.5px;">- Rp {{ number_format($order->diskon_poin, 0, ',', '.') }}</td>
+    </tr>
+</table>
+@endif
 
 <div class="total-box">
     <div class="total-label">Total</div>
     <div class="total-value">Rp {{ number_format($order->pembayaran?->total ?? 0, 0, ',', '.') }}</div>
     <div class="total-meta">
-        Metode: {{ ucfirst($order->pembayaran->metode) }}
+        Metode: {{ strtoupper($order->pembayaran?->metode ?? 'tempo') }}
         &nbsp;·&nbsp;
-        <span class="{{ $order->pembayaran->status === 'lunas' ? '' : 'bold' }}">
-            {{ strtoupper($order->pembayaran->status) }}
+        <span class="bold">
+            {{ $order->pembayaran?->status === 'selesai' ? 'SELESAI' : 'BELUM SELESAI' }}
         </span>
     </div>
 </div>
 
 <div class="center" style="margin: 3mm 0;">
-    <span class="status-badge status-{{ $order->status }}">
-        Status: {{ strtoupper($order->status) }}
+    <span class="status-badge" style="background: #f1f5f9; color: #475569; font-size: 9px; padding: 1mm 3mm; border-radius: 4px;">
+        STATUS: {{ strtoupper(str_replace('_', ' ', $order->status)) }}
     </span>
 </div>
 

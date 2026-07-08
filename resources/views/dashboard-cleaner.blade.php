@@ -56,7 +56,11 @@
                 <a href="{{ route('orders.show', $o) }}" class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
             </td>
             <td class="px-5 py-3 text-sm text-gray-800">{{ $o->nama_pelanggan }}</td>
-            <td class="px-5 py-3 text-xs text-gray-500">{{ $o->layanan->nama }}</td>
+            <td class="px-5 py-3 text-xs text-gray-500">
+                {{ $o->items->isNotEmpty()
+                    ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                    : ($o->layanan->nama ?? '—') }}
+            </td>
             <td class="px-5 py-3 text-xs whitespace-nowrap {{ $late ? 'text-red-600 font-medium' : 'text-gray-500' }}">
                 {{ $o->estimasi_selesai->isoFormat('D MMM') }}
                 @if($late) <span class="text-red-400">(terlambat)</span> @endif

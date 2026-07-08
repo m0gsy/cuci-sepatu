@@ -65,11 +65,9 @@
                         ['route' => 'hpp.laporan',      'label' => 'Profit / Loss',  'match' => 'hpp.laporan'],
                         ['route' => 'laporan',          'label' => 'Laporan',        'match' => 'laporan*'],
                         ['route' => 'operasional.index','label' => 'Operasional',    'match' => 'operasional.*'],
-                        ['route' => 'layanans.index',   'label' => 'Master layanan', 'match' => 'layanans.*'],
                         ['route' => 'vouchers.index',   'label' => 'Voucher',        'match' => 'vouchers.*'],
                         ['route' => 'reviews.index',    'label' => 'Ulasan',         'match' => 'reviews.*'],
                         ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
-                        ['route' => 'stok.index',       'label' => 'Stok bahan',     'match' => 'stok.*'],
                         ['route' => 'wa-templates.index','label' => 'Template WA',   'match' => 'wa-templates.*'],
                     ]);
                 } else {
@@ -81,10 +79,8 @@
                         'lokasi'        => ['route' => 'lokasi.index',     'label' => 'Lokasi sepatu',  'match' => 'lokasi.*'],
                         'laporan'       => ['route' => 'laporan',          'label' => 'Laporan',        'match' => 'laporan*'],
                         'hpp'           => ['route' => 'hpp.laporan',      'label' => 'Profit / Loss',  'match' => 'hpp.laporan'],
-                        'layanans'      => ['route' => 'layanans.index',   'label' => 'Master layanan', 'match' => 'layanans.*'],
                         'vouchers'      => ['route' => 'vouchers.index',   'label' => 'Voucher',        'match' => 'vouchers.*'],
                         'rewards'       => ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
-                        'stok'          => ['route' => 'stok.index',       'label' => 'Stok bahan',     'match' => 'stok.*'],
                         'operasional'   => ['route' => 'operasional.index','label' => 'Operasional',    'match' => 'operasional.*'],
                         'wa_template'   => ['route' => 'wa-templates.index','label' => 'Template WA',  'match' => 'wa-templates.*'],
                     ];
@@ -112,14 +108,80 @@
                     {{ $item['label'] }}
                 </a>
             @endforeach
+
+            @php
+                $canLayanan = $isOwner || ($user && $user->hasPermission('layanans'));
+                $canStok = $isOwner || ($user && $user->hasPermission('stok'));
+                $canHpp = $isOwner || ($user && $user->hasPermission('hpp'));
+                $showKelola = $canLayanan || $canStok || $canHpp;
+            @endphp
+
+            @if($showKelola)
+            <div x-data="{ open: {{ (
+                request()->routeIs('layanans.*') ||
+                request()->routeIs('kategori-layanans.*') ||
+                request()->routeIs('jenis-barangs.*') ||
+                request()->routeIs('bahans.*') ||
+                request()->routeIs('hpp.index') ||
+                request()->routeIs('stok.*')
+            ) ? 'true' : 'false' }} }" class="mt-2.5">
+                <button @click="open = !open" 
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors nav-link hover:text-white focus:outline-none">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Kelola</span>
+                    </span>
+                    <svg class="w-3.5 h-3.5 transform transition-transform duration-150" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" x-cloak class="pl-6 space-y-0.5 mt-0.5">
+                    @if($canLayanan)
+                    <a href="{{ route('layanans.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ request()->routeIs('layanans.*') ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Master Pelayanan
+                    </a>
+                    <a href="{{ route('kategori-layanans.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ request()->routeIs('kategori-layanans.*') ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Kategori Layanan
+                    </a>
+                    <a href="{{ route('jenis-barangs.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ request()->routeIs('jenis-barangs.*') ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Jenis Barang
+                    </a>
+                    @endif
+
+                    @if($canStok)
+                    <a href="{{ route('bahans.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ request()->routeIs('bahans.*') ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Daftar Bahan Baku
+                    </a>
+                    @endif
+
+                    @if($isOwner)
+                    <a href="{{ route('hpp.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ request()->routeIs('hpp.index') ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Kelola Bahan Baku
+                    </a>
+                    @endif
+
+                    @if($canStok)
+                    <a href="{{ route('stok.index') }}"
+                       class="block px-3 py-1.5 rounded-lg text-xs transition-colors {{ (request()->routeIs('stok.*') && !request()->routeIs('bahans.*')) ? 'nav-active' : 'nav-link hover:text-white' }}">
+                        Stok Bahan Baku
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             @if($isOwner)
             <div class="mt-3 mb-1 px-3">
-                <p class="text-xs font-medium uppercase tracking-wider" style="color:rgba(187,230,207,0.4);">Kelola</p>
+                <p class="text-xs font-medium uppercase tracking-wider" style="color:rgba(187,230,207,0.4);">Sistem</p>
             </div>
-            <a href="{{ route('hpp.index') }}"
-               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('hpp.index') ? 'nav-active' : 'nav-link' }}">
-                Kelola HPP
-            </a>
             <a href="{{ route('lokasi.index') }}"
                class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('lokasi.*') ? 'nav-active' : 'nav-link' }}">
                 Lokasi sepatu

@@ -77,7 +77,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2.5">
                             <p class="font-medium text-gray-900 text-xs">{{ $p->nama }}</p>
-                            <p class="text-xs text-gray-400">{{ $p->no_hp }}</p>
+                            <p class="text-xs text-gray-400">{{ $p->no_hp_display }}</p>
                         </td>
                         <td class="px-4 py-2.5 text-right">
                             <span class="font-semibold text-blue-700 text-sm">{{ number_format($p->poin, 0, ',', '.') }}</span>

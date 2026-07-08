@@ -17,6 +17,10 @@ use App\Http\Controllers\StokController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\WaTemplateController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\KategoriLayananController;
+use App\Http\Controllers\JenisBarangController;
+use App\Http\Controllers\BahanController;
+use App\Http\Middleware\NormalizePhoneNumber;
 use Illuminate\Support\Facades\Route;
 
 // ── PUBLIC MARKETING PAGES ──────────────────────────────────────────────────
@@ -29,8 +33,8 @@ Route::get('/terms',          [PublicPageController::class, 'terms'])->name('ter
 Route::get('/refund-policy',  [PublicPageController::class, 'refund'])->name('refund');
 
 // Publik — order tracking & review
-Route::get('/status/{token}',                           [StatusController::class, 'show'])->name('status.order');
-Route::post('orders/{order:token_publik}/review',       [ReviewController::class, 'store'])->middleware('throttle:5,60')->name('orders.review.store');
+Route::get('/status/{token}', [StatusController::class, 'show'])->middleware('throttle:30,1')->name('status.order');
+Route::post('orders/{order:token_publik}/review', [ReviewController::class, 'store'])->middleware('throttle:5,60')->name('orders.review.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -44,10 +48,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // literal path (create) harus sebelum wildcard ({order})
     Route::get('orders/create',                [OrderController::class, 'create'])->middleware('permission:orders.manage')->name('orders.create');
     Route::get('orders',                       [OrderController::class, 'index'])->name('orders.index');
-    Route::post('orders',                      [OrderController::class, 'store'])->middleware('permission:orders.manage')->name('orders.store');
+    Route::post('orders',                      [OrderController::class, 'store'])->middleware(['permission:orders.manage', NormalizePhoneNumber::class])->name('orders.store');
     Route::get('orders/{order}',               [OrderController::class, 'show'])->middleware('permission:orders.manage')->name('orders.show');
     Route::get('orders/{order}/edit',          [OrderController::class, 'edit'])->middleware('permission:orders.manage')->name('orders.edit');
-    Route::put('orders/{order}',               [OrderController::class, 'update'])->middleware('permission:orders.manage')->name('orders.update');
+    Route::put('orders/{order}',               [OrderController::class, 'update'])->middleware(['permission:orders.manage', NormalizePhoneNumber::class])->name('orders.update');
     Route::patch('orders/{order}/status',      [OrderController::class, 'updateStatus'])->middleware('permission:orders.manage')->name('orders.status');
     Route::patch('orders/{order}/lokasi',      [OrderController::class, 'updateLokasi'])->middleware('permission:lokasi')->name('orders.lokasi');
     Route::patch('orders/{order}/tandai-lunas',[OrderController::class, 'tandaiLunas'])->middleware('permission:orders.manage')->name('orders.lunas');
@@ -57,9 +61,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── PELANGGAN ─────────────────────────────────────────────────────────
     Route::get('pelanggans',                   [PelangganController::class, 'index'])->middleware('permission:pelanggan')->name('pelanggans.index');
     Route::get('pelanggans/cari',              [PelangganController::class, 'cari'])->middleware('throttle:60,1')->name('pelanggans.cari');
-    Route::post('pelanggans',                  [PelangganController::class, 'store'])->middleware('permission:pelanggan')->name('pelanggans.store');
+    Route::get('pelanggans/poin',              [PelangganController::class, 'getPoinByPhone'])->middleware('throttle:60,1')->name('pelanggans.poin');
+    Route::post('pelanggans',                  [PelangganController::class, 'store'])->middleware(['permission:pelanggan', NormalizePhoneNumber::class])->name('pelanggans.store');
     Route::get('pelanggans/{pelanggan}',       [PelangganController::class, 'show'])->middleware('permission:pelanggan')->name('pelanggans.show');
-    Route::put('pelanggans/{pelanggan}',       [PelangganController::class, 'update'])->middleware('permission:pelanggan')->name('pelanggans.update');
+    Route::put('pelanggans/{pelanggan}',       [PelangganController::class, 'update'])->middleware(['permission:pelanggan', NormalizePhoneNumber::class])->name('pelanggans.update');
 
     // ── REVIEW (staff bisa lihat, customer submit via publik) ────────────
     Route::get('reviews',                      [ReviewController::class, 'index'])->middleware('admin-or-owner')->name('reviews.index');
@@ -90,6 +95,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('layanans',                         [LayananController::class, 'store'])->middleware('permission:layanans')->name('layanans.store');
     Route::put('layanans/{layanan}',                [LayananController::class, 'update'])->middleware('permission:layanans')->name('layanans.update');
     Route::patch('layanans/{layanan}/toggle-aktif', [LayananController::class, 'toggleAktif'])->middleware('permission:layanans')->name('layanans.toggle');
+
+    // ── KATEGORI LAYANAN ──────────────────────────────────────────────────
+    Route::get('kategori-layanans',                           [KategoriLayananController::class, 'index'])->middleware('permission:layanans')->name('kategori-layanans.index');
+    Route::post('kategori-layanans',                          [KategoriLayananController::class, 'store'])->middleware('permission:layanans')->name('kategori-layanans.store');
+    Route::put('kategori-layanans/{kategoriLayanan}',         [KategoriLayananController::class, 'update'])->middleware('permission:layanans')->name('kategori-layanans.update');
+    Route::patch('kategori-layanans/{kategoriLayanan}/toggle', [KategoriLayananController::class, 'toggle'])->middleware('permission:layanans')->name('kategori-layanans.toggle');
+
+    // ── JENIS BARANG ──────────────────────────────────────────────────────
+    Route::get('jenis-barangs',                           [JenisBarangController::class, 'index'])->middleware('permission:layanans')->name('jenis-barangs.index');
+    Route::post('jenis-barangs',                          [JenisBarangController::class, 'store'])->middleware('permission:layanans')->name('jenis-barangs.store');
+    Route::put('jenis-barangs/{jenisBarang}',             [JenisBarangController::class, 'update'])->middleware('permission:layanans')->name('jenis-barangs.update');
+    Route::patch('jenis-barangs/{jenisBarang}/toggle',    [JenisBarangController::class, 'toggle'])->middleware('permission:layanans')->name('jenis-barangs.toggle');
+
+    // ── DAFTAR BAHAN BAKU ──────────────────────────────────────────────────
+    Route::get('bahans',                           [BahanController::class, 'index'])->middleware('permission:stok')->name('bahans.index');
+    Route::post('bahans',                          [BahanController::class, 'store'])->middleware('permission:stok')->name('bahans.store');
+    Route::put('bahans/{bahan}',                   [BahanController::class, 'update'])->middleware('permission:stok')->name('bahans.update');
+    Route::patch('bahans/{bahan}/toggle',          [BahanController::class, 'toggle'])->middleware('permission:stok')->name('bahans.toggle');
 
     // ── VOUCHER ───────────────────────────────────────────────────────────
     Route::get('vouchers/cek',               [VoucherController::class, 'cek'])->middleware(['permission:vouchers', 'throttle:30,1'])->name('vouchers.cek');

@@ -1,10 +1,24 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cek Status Order — {{ $order->no_order }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#1a3a2a',
+                            hover: '#142d20'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
 <div class="w-full max-w-md">
@@ -23,33 +37,34 @@
 
         {{-- Header status --}}
         @php
-            $statusConfig = [
-                'diterima'     => ['bg' => 'bg-slate-50',   'text' => 'text-slate-800',  'label' => 'Order diterima',   'desc' => 'Order Anda sudah kami terima dan sedang dalam antrian'],
-                'inspeksi'     => ['bg' => 'bg-purple-50',  'text' => 'text-purple-800', 'label' => 'Inspeksi',         'desc' => 'Kami sedang memeriksa kondisi sepatu Anda'],
-                'dicuci'       => ['bg' => 'bg-blue-50',    'text' => 'text-blue-800',   'label' => 'Sedang dicuci',    'desc' => 'Sepatu Anda sedang dalam proses pencucian'],
-                'kering'       => ['bg' => 'bg-yellow-50',  'text' => 'text-yellow-800', 'label' => 'Pengeringan',      'desc' => 'Sepatu Anda sedang dikeringkan'],
-                'finishing'    => ['bg' => 'bg-orange-50',  'text' => 'text-orange-800', 'label' => 'Finishing',        'desc' => 'Tahap akhir pengerjaan sepatu Anda'],
-                'siap_diambil' => ['bg' => 'bg-green-50',   'text' => 'text-green-800',  'label' => 'Siap diambil!',    'desc' => 'Sepatu Anda sudah selesai dan siap diambil'],
-                'selesai'      => ['bg' => 'bg-gray-50',    'text' => 'text-gray-700',   'label' => 'Sudah Diambil',    'desc' => 'Sepatu Anda sudah diambil. Terima kasih sudah mempercayakan sepatu Anda!'],
-                // legacy
-                'antri'        => ['bg' => 'bg-amber-50',   'text' => 'text-amber-800',  'label' => 'Dalam antrian',    'desc' => 'Order Anda sedang menunggu giliran'],
-                'proses'       => ['bg' => 'bg-blue-50',    'text' => 'text-blue-800',   'label' => 'Sedang diproses',  'desc' => 'Sepatu Anda sedang dicuci'],
-                'diambil'      => ['bg' => 'bg-gray-50',    'text' => 'text-gray-700',   'label' => 'Sudah diambil',    'desc' => 'Order selesai, terima kasih!'],
-            ];
-            $sc = $statusConfig[$order->status] ?? $statusConfig['diterima'];
-
-            $allStatuses = ['diterima', 'inspeksi', 'dicuci', 'kering', 'finishing', 'siap_diambil', 'selesai'];
-            $labels      = ['Diterima', 'Inspeksi', 'Dicuci', 'Kering', 'Finishing', 'Siap Ambil', 'Selesai'];
-            $currentIdx  = array_search($order->status, $allStatuses);
-            if ($currentIdx === false) {
-                // legacy mapping
-                $currentIdx = match($order->status) {
-                    'antri'   => 0,
-                    'proses'  => 2,
-                    'diambil' => 6,
-                    default   => 0,
-                };
+            $normalizedStatus = $order->status;
+            if (in_array($normalizedStatus, ['antri'])) {
+                $normalizedStatus = 'menunggu_pembayaran';
+            } elseif (in_array($normalizedStatus, ['proses', 'diterima', 'inspeksi', 'dicuci', 'kering', 'finishing'])) {
+                $normalizedStatus = 'diproses';
+            } elseif (in_array($normalizedStatus, ['diambil'])) {
+                $normalizedStatus = 'selesai';
             }
+
+            $statusConfig = [
+                'draft'               => ['bg' => 'bg-slate-50',   'text' => 'text-slate-800',  'label' => 'Draft',            'desc' => 'Order Anda masih berupa draft awal'],
+                'menunggu_pembayaran' => ['bg' => 'bg-amber-50',   'text' => 'text-amber-800',  'label' => 'Menunggu Pembayaran', 'desc' => 'Menunggu pembayaran selesai sebelum diproses'],
+                'diproses'            => ['bg' => 'bg-blue-50',    'text' => 'text-blue-800',   'label' => 'Sedang Diproses',   'desc' => 'Sepatu Anda sedang dalam pengerjaan oleh tim kami'],
+                'siap_diambil'        => ['bg' => 'bg-green-50',   'text' => 'text-green-800',  'label' => 'Siap Diambil!',    'desc' => 'Sepatu Anda sudah selesai dan siap untuk diambil'],
+                'selesai'             => ['bg' => 'bg-gray-50',    'text' => 'text-gray-700',   'label' => 'Sudah Diambil',    'desc' => 'Sepatu Anda sudah diambil. Terima kasih sudah mempercayakan sepatu Anda!'],
+                'batal'               => ['bg' => 'bg-red-50',     'text' => 'text-red-800',    'label' => 'Batal',            'desc' => 'Order ini telah dibatalkan'],
+            ];
+
+            if ($order->poin > 0) {
+                $statusConfig['siap_diambil']['desc'] .= ' (Anda mendapatkan ' . $order->poin . ' poin!)';
+                $statusConfig['selesai']['desc'] .= ' (Anda mendapatkan ' . $order->poin . ' poin!)';
+            }
+
+            $sc = $statusConfig[$normalizedStatus] ?? $statusConfig['draft'];
+
+            $allStatuses = ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil', 'selesai'];
+            $labels      = ['Draft', 'Menunggu Pembayaran', 'Diproses', 'Siap Diambil', 'Selesai'];
+            $currentIdx  = array_search($normalizedStatus, $allStatuses);
         @endphp
 
         <div class="{{ $sc['bg'] }} px-6 py-5 text-center">
@@ -57,26 +72,44 @@
             <p class="text-sm {{ $sc['text'] }} opacity-80">{{ $sc['desc'] }}</p>
         </div>
 
-        {{-- Progress bar 7 tahap --}}
-        <div class="px-5 py-5 border-b border-gray-100">
-            <div class="flex items-start gap-0.5">
+        {{-- Progress bar 5 tahap --}}
+        @if($normalizedStatus !== 'batal' && $currentIdx !== false)
+        <div class="px-6 py-5 border-b border-gray-100">
+            <div class="relative flex items-center w-full">
+                <!-- Background line -->
+                <div class="absolute left-[10%] right-[10%] top-3 h-0.5 bg-gray-200">
+                    @php
+                        $percent = ($currentIdx / (count($allStatuses) - 1)) * 100;
+                    @endphp
+                    <div class="h-full bg-brand transition-all duration-500" style="width: {{ $percent }}%"></div>
+                </div>
+
                 @foreach($allStatuses as $i => $s)
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
-                                {{ $i < $currentIdx ? 'bg-brand text-white' : ($i === $currentIdx ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-400') }}">
-                        @if($i < $currentIdx) ✓ @else {{ $i + 1 }} @endif
+                @php
+                    $done = $i <= $currentIdx;
+                    $curr = $i === $currentIdx;
+                @endphp
+                <div class="flex-1 flex flex-col items-center relative z-10">
+                    <div class="bg-white px-2">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold
+                                    {{ $curr ? 'bg-white text-brand ring-2 ring-brand shadow-sm' : ($done ? 'bg-brand text-white' : 'bg-gray-100 text-gray-400') }}">
+                            @if($done && !$curr)
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            @else
+                            {{ $i + 1 }}
+                            @endif
+                        </div>
                     </div>
-                    <span class="text-xs mt-1 text-center leading-tight
-                                 {{ $i <= $currentIdx ? 'text-gray-700 font-medium' : 'text-gray-400' }}">
-                        {{ $labels[$i] }}
+                    <span class="text-[9px] text-center mt-1.5 leading-tight font-semibold text-gray-400 {{ $done ? 'text-gray-700' : '' }} min-w-[65px] max-w-[85px] break-words">
+                        {{ str_replace('\n', ' ', $labels[$i]) }}
                     </span>
                 </div>
-                @if(!$loop->last)
-                <div class="h-0.5 flex-1 mt-3 {{ $i < $currentIdx ? 'bg-brand' : 'bg-gray-200' }}"></div>
-                @endif
                 @endforeach
             </div>
         </div>
+        @endif
 
         {{-- Detail order --}}
         <div class="px-6 py-4">
@@ -85,12 +118,29 @@
                     $rows = [
                         'No. order'       => $order->no_order,
                         'Pelanggan'       => $order->nama_pelanggan,
-                        'Layanan'         => $order->layanan->nama,
-                        'Jenis sepatu'    => $order->jenis_sepatu,
+                        'Layanan'         => $order->items->isNotEmpty()
+                            ? $order->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                            : ($order->layanan->nama ?? '—'),
+                        'Jenis sepatu'    => $order->items->isNotEmpty()
+                            ? $order->items->map(fn($i) => $i->jenisBarang->nama ?? '—')->join(', ')
+                            : ($order->jenis_sepatu ?? '—'),
                     ];
-                    if ($order->merek) $rows['Merek'] = $order->merek;
-                    if ($order->warna) $rows['Warna'] = $order->warna;
+                    if ($order->items->isNotEmpty()) {
+                        $mereks = $order->items->map(fn($i) => $i->merek)->filter()->join(', ');
+                        $warnas = $order->items->map(fn($i) => $i->warna)->filter()->join(', ');
+                        if ($mereks) $rows['Merek'] = $mereks;
+                        if ($warnas) $rows['Warna'] = $warnas;
+                    } else {
+                        if ($order->merek) $rows['Merek'] = $order->merek;
+                        if ($order->warna) $rows['Warna'] = $order->warna;
+                    }
                     $rows['Jumlah']         = $order->jumlah_pasang . ' pasang';
+                    if ($order->diskon > 0) {
+                        $rows['Diskon voucher'] = '- Rp ' . number_format($order->diskon, 0, ',', '.');
+                    }
+                    if ($order->diskon_poin > 0) {
+                        $rows['Diskon poin'] = '- Rp ' . number_format($order->diskon_poin, 0, ',', '.') . ' (' . $order->poin_digunakan . ' poin)';
+                    }
                     $rows['Total']          = 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.');
                     $rows['Est. selesai']   = $order->estimasi_selesai?->isoFormat('D MMMM Y') ?? '—';
                     if ($order->selesai_pada) {
@@ -153,7 +203,7 @@
     </div>
 
     <p class="text-center text-xs text-gray-400 mt-4">
-        Ada pertanyaan? Hubungi kami via WhatsApp
+        Ada pertanyaan? <a href="https://wa.me/6281958800679?text=Halo%20Step%20Shine%20Works%2C%20saya%20ingin%20bertanya%20tentang%20order%20{{ $order->no_order }}" target="_blank" class="text-brand hover:underline font-medium">Hubungi kami via WhatsApp</a>
     </p>
 </div>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

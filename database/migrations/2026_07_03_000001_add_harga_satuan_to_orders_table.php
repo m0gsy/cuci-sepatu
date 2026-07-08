@@ -14,12 +14,20 @@ return new class extends Migration
         });
 
         // Backfill dari pembayaran.total + diskon untuk order yang sudah ada
-        DB::statement('
-            UPDATE orders o
-            LEFT JOIN pembayarans p ON p.order_id = o.id
-            SET o.harga_satuan = ROUND((COALESCE(p.total, 0) + o.diskon) / o.jumlah_pasang)
-            WHERE o.harga_satuan IS NULL AND o.jumlah_pasang > 0
-        ');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('
+                UPDATE orders o
+                LEFT JOIN pembayarans p ON p.order_id = o.id
+                SET o.harga_satuan = ROUND((COALESCE(p.total, 0) + o.diskon) / o.jumlah_pasang)
+                WHERE o.harga_satuan IS NULL AND o.jumlah_pasang > 0
+            ');
+        } else {
+            DB::statement('
+                UPDATE orders
+                SET harga_satuan = ROUND((COALESCE((SELECT total FROM pembayarans WHERE order_id = orders.id), 0) + diskon) / jumlah_pasang)
+                WHERE harga_satuan IS NULL AND jumlah_pasang > 0
+            ');
+        }
     }
 
     public function down(): void

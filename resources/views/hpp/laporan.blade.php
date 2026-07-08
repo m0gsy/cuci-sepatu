@@ -242,7 +242,11 @@
                        class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-800">{{ $o->nama_pelanggan }}</td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ $o->layanan->nama }}</td>
+                <td class="px-4 py-3 text-xs text-gray-500">
+                    {{ $o->items->isNotEmpty()
+                        ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                        : ($o->layanan->nama ?? '—') }}
+                </td>
                 <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $o->lokasi?->kode ?? '—' }}</td>
                 <td class="px-4 py-3 text-sm text-right text-gray-900 whitespace-nowrap">
                     Rp {{ number_format($o->net_sales, 0, ',', '.') }}

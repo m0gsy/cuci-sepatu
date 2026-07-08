@@ -34,7 +34,7 @@ class KaryawanController extends Controller
     public function show(User $karyawan)
     {
         $orders = $karyawan->orders()
-            ->with(['layanan', 'pembayaran'])
+            ->with(['items.layanan', 'pembayaran'])
             ->latest()->paginate(10);
 
         $stats = [
@@ -46,13 +46,17 @@ class KaryawanController extends Controller
                 ->whereDate('orders.created_at', today())->count(),
             'total_diproses'  => $karyawan->orders()
                 ->join('pembayarans', 'orders.id', '=', 'pembayarans.order_id')
-                ->where('pembayarans.status', 'lunas')->sum('pembayarans.total'),
+                ->where('pembayarans.status', 'selesai')->sum('pembayarans.total'),
         ];
+
+        $driver = DB::getDriverName();
+        $yearExpr = $driver === 'sqlite' ? "strftime('%Y', orders.created_at)" : "YEAR(orders.created_at)";
+        $monthExpr = $driver === 'sqlite' ? "CAST(strftime('%m', orders.created_at) as integer)" : "MONTH(orders.created_at)";
 
         $rekapBulanan = $karyawan->orders()
             ->select(
-                DB::raw('YEAR(orders.created_at) as tahun'),
-                DB::raw('MONTH(orders.created_at) as bulan'),
+                DB::raw("$yearExpr as tahun"),
+                DB::raw("$monthExpr as bulan"),
                 DB::raw('COUNT(*) as jumlah')
             )
             ->where('orders.created_at', '>=', now()->subMonths(6))

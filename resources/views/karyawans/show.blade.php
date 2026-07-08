@@ -84,7 +84,11 @@
                 <tr class="border-b border-gray-50 hover:bg-gray-50">
                     <td class="px-5 py-3 whitespace-nowrap"><a href="{{ route('orders.show', $o) }}" class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a></td>
                     <td class="px-5 py-3 text-sm text-gray-800">{{ $o->nama_pelanggan }}</td>
-                    <td class="px-5 py-3 text-xs text-gray-500">{{ $o->layanan->nama }}</td>
+                    <td class="px-5 py-3 text-xs text-gray-500">
+                        {{ $o->items->isNotEmpty()
+                            ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                            : ($o->layanan->nama ?? '—') }}
+                    </td>
                     <td class="px-5 py-3 text-sm font-medium text-right text-gray-900 whitespace-nowrap">{{ $o->pembayaran?->total_format ?? '—' }}</td>
                     <td class="px-5 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $o->created_at->isoFormat('D MMM Y') }}</td>
                     <td class="px-5 py-3 whitespace-nowrap">

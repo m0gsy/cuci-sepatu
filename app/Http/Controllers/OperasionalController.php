@@ -26,7 +26,7 @@ class OperasionalController extends Controller
 
         $pendapatan = Pembayaran::whereYear('pembayarans.dibayar_pada', $tahun)
             ->whereMonth('pembayarans.dibayar_pada', $bln)
-            ->where('status', 'lunas')->sum('total');
+            ->where('status', 'selesai')->sum('total');
 
         $rekapKategori = Operasional::whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bln)

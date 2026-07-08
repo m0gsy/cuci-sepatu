@@ -77,15 +77,17 @@ table.data tfoot td {
 /* Status badges */
 .badge {
     display: inline-block;
-    padding: 1px 5px;
-    border-radius: 20px;
-    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 8px;
     font-weight: bold;
 }
-.badge-antri   { background: #FEF3C7; color: #92400E; }
-.badge-proses  { background: #DBEAFE; color: #1E40AF; }
-.badge-selesai { background: #D1FAE5; color: #065F46; }
-.badge-diambil { background: #F3F4F6; color: #374151; }
+.badge-draft               { background: #F3F4F6; color: #475569; }
+.badge-menunggu_pembayaran { background: #FEF3C7; color: #92400E; }
+.badge-diproses            { background: #DBEAFE; color: #1E40AF; }
+.badge-siap_diambil        { background: #D1FAE5; color: #065F46; }
+.badge-selesai             { background: #E0F2FE; color: #0369A1; }
+.badge-batal               { background: #FEE2E2; color: #B91C1C; }
 
 .footer {
     margin-top: 10mm;
@@ -188,7 +190,11 @@ table.data tfoot td {
                 {{ $o->no_order }}
             </td>
             <td>{{ $o->nama_pelanggan }}</td>
-            <td class="muted">{{ $o->layanan->nama }}</td>
+            <td class="muted">
+                {{ $o->items->isNotEmpty()
+                    ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                    : ($o->layanan->nama ?? '—') }}
+            </td>
             <td class="right" style="font-weight:bold;">
                 Rp {{ number_format($o->pembayaran?->total ?? 0, 0, ',', '.') }}
             </td>

@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <p class="text-lg font-semibold text-gray-900">{{ $pelanggan->nama }}</p>
-                    <p class="text-sm text-gray-500">{{ $pelanggan->no_hp }}</p>
+                    <p class="text-sm text-gray-500">{{ $pelanggan->no_hp_display }}</p>
                     @if($pelanggan->alamat)<p class="text-xs text-gray-400">{{ $pelanggan->alamat }}</p>@endif
                 </div>
             </div>
@@ -39,7 +39,7 @@
                     </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">No. HP</label>
-                        <input type="text" name="no_hp" value="{{ $pelanggan->no_hp }}"
+                        <input type="text" name="no_hp" value="{{ $pelanggan->no_hp_display }}"
                                class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
                     </div>
                     <div class="col-span-2">
@@ -91,7 +91,7 @@
             <tbody>
             @foreach($rekapLayanan as $r)
                 <tr class="border-b border-gray-50">
-                    <td class="px-5 py-3 text-sm font-medium text-gray-900">{{ $r->layanan->nama }}</td>
+                    <td class="px-5 py-3 text-sm font-medium text-gray-900">{{ $r->layanan->nama ?? '—' }}</td>
                     <td class="px-5 py-3 text-sm text-center text-gray-700">{{ $r->jumlah }}×</td>
                     <td class="px-5 py-3 text-sm text-right text-gray-700">{{ $r->total_pasang }} pasang</td>
                 </tr>
@@ -127,7 +127,11 @@
                            class="text-xs font-mono text-gray-500 hover:text-gray-900">{{ $o->no_order }}</a>
                     </td>
                     <td class="px-5 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $o->created_at->isoFormat('D MMM Y') }}</td>
-                    <td class="px-5 py-3 text-sm text-gray-700">{{ $o->layanan->nama }}</td>
+                    <td class="px-5 py-3 text-sm text-gray-700">
+                        {{ $o->items->isNotEmpty()
+                            ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                            : ($o->layanan->nama ?? '—') }}
+                    </td>
                     <td class="px-5 py-3 whitespace-nowrap">
                         @if($o->lokasi)
                         <span class="text-xs font-mono font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">

@@ -13,13 +13,13 @@ class LokasiController extends Controller
     {
         $lokasis = Lokasi::with('layanans')
             ->withCount([
-                'orders as order_aktif'   => fn($q) => $q->whereIn('status', ['antri', 'proses', 'diterima', 'inspeksi', 'dicuci', 'kering', 'finishing']),
-                'orders as order_selesai' => fn($q) => $q->whereIn('status', ['siap_diambil', 'selesai']),
+                'orders as order_aktif'   => fn($q) => $q->whereIn('status', ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil']),
+                'orders as order_selesai' => fn($q) => $q->whereIn('status', ['selesai']),
             ])
             ->orderBy('kode')->get();
 
         $orderAktif = Order::with(['layanan', 'lokasi'])
-            ->whereIn('status', ['diterima', 'inspeksi', 'dicuci', 'kering', 'finishing', 'siap_diambil', 'antri', 'proses', 'selesai'])
+            ->whereIn('status', ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil'])
             ->whereNotNull('lokasi_id')
             ->latest()->get();
 

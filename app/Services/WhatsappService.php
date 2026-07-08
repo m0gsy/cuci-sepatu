@@ -13,7 +13,7 @@ class WhatsappService
 
     public function __construct()
     {
-        $this->token = config('services.wablas.token', '');
+        $this->token = config('services.wablas.token') ?? '';
     }
 
     public function kirim(string $nomorHp, string $pesan): bool
@@ -56,15 +56,34 @@ class WhatsappService
         return $this->kirim($order->no_hp, $pesan);
     }
 
+    private function compileItemsText(Order $order): string
+    {
+        if ($order->items->isNotEmpty()) {
+            return $order->items->map(function ($item) {
+                $detailStr = $item->layanan->nama;
+                if ($item->jenisBarang?->nama) {
+                    $detailStr .= ' (' . $item->jenisBarang->nama . ')';
+                }
+                return "- " . $detailStr . ": " . $item->jumlah_pasang . " pasang x Rp " . number_format($item->harga_satuan, 0, ',', '.');
+            })->join("\n");
+        }
+        
+        $detailStr = $order->layanan->nama ?? '—';
+        if ($order->jenis_sepatu) {
+            $detailStr .= ' (' . $order->jenis_sepatu . ')';
+        }
+        return "- " . $detailStr . ": " . $order->jumlah_pasang . " pasang x Rp " . number_format($order->harga_satuan ?? 0, 0, ',', '.');
+    }
+
     public function pesanOrderMasuk(Order $order): string
     {
         return $this->render('order_masuk', [
             'nama_pelanggan'   => $order->nama_pelanggan,
             'no_order'         => $order->no_order,
-            'layanan'          => $order->layanan->nama,
+            'layanan'          => $this->compileItemsText($order),
             'lokasi'           => $order->lokasi?->nama ?? '',
             'jumlah_pasang'    => $order->jumlah_pasang,
-            'total'            => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
+            'total'            => 'Rp ' . number_format($order->pembayaran?->total ?? $order->net_sales, 0, ',', '.'),
             'metode_bayar'     => ucfirst($order->pembayaran?->metode ?? 'tempo'),
             'estimasi_selesai' => $order->estimasi_selesai?->isoFormat('D MMMM Y') ?? '—',
             'link_status'      => route('status.order', $order->token_publik),
@@ -76,7 +95,7 @@ class WhatsappService
         return $this->render('mulai_dicuci', [
             'nama_pelanggan' => $order->nama_pelanggan,
             'no_order'       => $order->no_order,
-            'layanan'        => $order->layanan->nama,
+            'layanan'        => $this->compileItemsText($order),
             'lokasi'         => $order->lokasi?->nama ?? '',
             'link_status'    => route('status.order', $order->token_publik),
         ]);
@@ -88,10 +107,10 @@ class WhatsappService
         return $this->render('order_selesai', [
             'nama_pelanggan' => $order->nama_pelanggan,
             'no_order'       => $order->no_order,
-            'layanan'        => $order->layanan->nama,
+            'layanan'        => $this->compileItemsText($order),
             'lokasi'         => $order->lokasi?->nama ?? '',
-            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
-            'status_bayar'   => strtoupper($order->pembayaran?->status ?? 'belum'),
+            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? $order->net_sales, 0, ',', '.'),
+            'status_bayar'   => ($order->pembayaran?->status === 'selesai') ? 'LUNAS' : 'BELUM LUNAS',
             'poin'           => $poin > 0 ? '+' . $poin . ' poin' : '',
             'link_status'    => route('status.order', $order->token_publik),
         ]);
@@ -102,15 +121,12 @@ class WhatsappService
         return $this->render('invoice', [
             'nama_pelanggan' => $order->nama_pelanggan,
             'no_order'       => $order->no_order,
-            'tanggal'        => $order->created_at->isoFormat('D MMMM Y'),
-            'layanan'        => $order->layanan->nama,
+            'tanggal'        => $order->created_at?->isoFormat('D MMMM Y') ?? now()->isoFormat('D MMMM Y'),
+            'layanan'        => $this->compileItemsText($order),
             'lokasi'         => $order->lokasi?->nama ?? '-',
-            'jenis_sepatu'   => $order->jenis_sepatu,
-            'jumlah_pasang'  => $order->jumlah_pasang,
-            'harga_satuan'   => 'Rp ' . number_format($order->harga_efektif, 0, ',', '.'),
-            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? 0, 0, ',', '.'),
+            'total'          => 'Rp ' . number_format($order->pembayaran?->total ?? $order->net_sales, 0, ',', '.'),
             'metode_bayar'   => ucfirst($order->pembayaran?->metode ?? 'tempo'),
-            'status_bayar'   => ($order->pembayaran?->status === 'lunas') ? 'LUNAS' : 'BELUM LUNAS',
+            'status_bayar'   => ($order->pembayaran?->status === 'selesai') ? 'LUNAS' : 'BELUM LUNAS',
         ]);
     }
 
@@ -137,20 +153,16 @@ class WhatsappService
     private function defaultTemplate(string $kode): string
     {
         return match($kode) {
-            'order_masuk'   => "Halo {nama_pelanggan}!\n\nOrder sepatu Anda di *Step Shine Works* sudah kami terima.\n\nDetail Order:\nNo. Order    : {no_order}\nLayanan      : {layanan}\nLokasi       : {lokasi}\nJumlah       : {jumlah_pasang} pasang\nTotal        : {total}\nMetode bayar : {metode_bayar}\nEst. selesai : {estimasi_selesai}\n\nPantau status order Anda di:\n{link_status}\n\nTerima kasih!\n_Step Shine Works_",
-            'mulai_dicuci'  => "Halo {nama_pelanggan}!\n\nSepatu Anda sudah mulai proses pencucian.\n\nNo. Order : {no_order}\nLayanan   : {layanan}\nLokasi    : {lokasi}\n\nPantau status: {link_status}\n\n_Step Shine Works_",
-            'order_selesai' => "Halo {nama_pelanggan}!\n\nSepatu Anda siap diambil!\n\nNo. Order    : {no_order}\nLayanan      : {layanan}\nLokasi       : {lokasi}\nTotal        : {total}\nStatus bayar : {status_bayar}\nPoin earned  : {poin}\n\nPantau status: {link_status}\n\n_Step Shine Works_",
-            'invoice'       => "Invoice - {no_order}\n\nKepada  : {nama_pelanggan}\nTanggal : {tanggal}\n\nLayanan  : {layanan}\nLokasi   : {lokasi}\nJenis    : {jenis_sepatu}\nJumlah   : {jumlah_pasang} pasang\n\nHarga/pasang : {harga_satuan}\nTotal        : {total}\n\nMetode bayar : {metode_bayar}\nStatus bayar : {status_bayar}\n\nTerima kasih!\n_Step Shine Works_",
+            'order_masuk'   => "Halo {nama_pelanggan}!\n\nOrder Anda di *Step Shine Works* sudah kami terima.\n\nDetail Order\nNo. Order    : {no_order}\nDetail Sepatu\n{layanan}\n\nLokasi       : {lokasi}\nTotal        : {total}\nMetode bayar : {metode_bayar}\nEst. selesai : {estimasi_selesai}\n\nPantau status order Anda di:\n{link_status}\n\nTerima kasih!\n_Step Shine Works_",
+            'mulai_dicuci'  => "Halo {nama_pelanggan}!\n\nKabar terbaru dari *Step Shine Works*: sepatu Anda sedang diproses oleh tim kami.\n\nNo. Order : {no_order}\nDetail Sepatu\n{layanan}\n\nLokasi    : {lokasi}\n\nPantau status: {link_status}\n\n_Step Shine Works_",
+            'order_selesai' => "Halo {nama_pelanggan}!\n\nSepatu Anda siap diambil!\n\nNo. Order    : {no_order}\nDetail Sepatu\n{layanan}\n\nLokasi       : {lokasi}\nTotal        : {total}\nStatus bayar : {status_bayar}\nPoin earned  : {poin}\n\nPantau status: {link_status}\n\nTerima kasih!\n_Step Shine Works_",
+            'invoice'       => "Invoice - {no_order}\n\nKepada  : {nama_pelanggan}\nTanggal : {tanggal}\n\nRincian Order\n{layanan}\n\nLokasi       : {lokasi}\nTotal        : {total}\n\nMetode bayar : {metode_bayar}\nStatus bayar : {status_bayar}\n\nTerima kasih!\n_Step Shine Works_",
             default         => '',
         };
     }
 
     protected function formatNomor(string $nomor): string
     {
-        $nomor = preg_replace('/[\s\-\+]/', '', $nomor);
-        if (str_starts_with($nomor, '0')) {
-            $nomor = '62' . substr($nomor, 1);
-        }
-        return $nomor;
+        return \App\Http\Middleware\NormalizePhoneNumber::normalize($nomor);
     }
 }

@@ -11,36 +11,20 @@ class StokController extends Controller
 {
     public function index()
     {
-        $stoks   = Stok::orderBy('nama')->get();
+        $stoks   = Stok::with('bahan')->get()->filter(fn($s) => $s->bahan && $s->bahan->aktif)->sortBy(fn($s) => $s->nama);
         $menipis = $stoks->filter(fn($s) => $s->status_stok !== 'aman');
         return view('stok.index', compact('stoks', 'menipis'));
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'nama'          => 'required|string|max:100|unique:stoks,nama',
-            'satuan'        => 'required|string|max:30',
-            'stok_saat_ini' => 'required|numeric|min:0',
-            'stok_minimum'  => 'required|numeric|min:0',
-            'harga_satuan'  => 'required|integer|min:0',
-            'catatan'       => 'nullable|string|max:300',
-        ]);
-        Stok::create($data);
-        return back()->with('success', "Bahan '{$data['nama']}' berhasil ditambahkan.");
-    }
-
+    // Direct Stok creation is disabled; stocks are created automatically when Bahans are added.
     public function update(Request $request, Stok $stok)
     {
         $data = $request->validate([
-            'nama'         => 'required|string|max:100|unique:stoks,nama,' . $stok->id,
-            'satuan'       => 'required|string|max:30',
             'stok_minimum' => 'required|numeric|min:0',
-            'harga_satuan' => 'required|integer|min:0',
             'catatan'      => 'nullable|string|max:300',
         ]);
         $stok->update($data);
-        return back()->with('success', "Data '{$stok->nama}' berhasil diperbarui.");
+        return back()->with('success', "Konfigurasi stok '{$stok->nama}' berhasil diperbarui.");
     }
 
     public function mutasi(Request $request, Stok $stok)

@@ -13,11 +13,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin
+        // Owner
         User::firstOrCreate(['email' => 'admin@cucisepatu.com'], [
-            'name'     => 'Admin',
+            'name'     => 'Owner',
             'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'Admin@StepShine1')),
-            'role'     => 'admin',
+            'role'     => 'owner',
             'aktif'    => true,
         ]);
 
