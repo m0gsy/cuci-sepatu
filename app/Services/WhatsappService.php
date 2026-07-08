@@ -9,41 +9,37 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsappService
 {
-    protected string $token;
-
-    public function __construct()
-    {
-        $this->token = config('services.wablas.token') ?? '';
-    }
-
     public function kirim(string $nomorHp, string $pesan): bool
     {
-        if (empty($this->token)) {
-            Log::warning('WA: WABLAS_TOKEN belum diisi di .env');
+        $nomor = $this->formatNomor($nomorHp);
+
+        $sid   = config('services.twilio.sid');
+        $token = config('services.twilio.token');
+        $from  = config('services.twilio.from');
+
+        if (empty($sid) || empty($token) || empty($from)) {
+            Log::warning('WA: Konfigurasi Twilio belum lengkap di .env');
             return false;
         }
+
         try {
-            $nomor   = $this->formatNomor($nomorHp);
-            $baseUrl = rtrim(config('services.wablas.url', 'https://smg.wablas.com'), '/');
-            $secret  = config('services.wablas.secret');
-            $payload = ['phone' => $nomor, 'message' => $pesan];
-            if ($secret) {
-                $payload['secret'] = $secret;
-            }
-            $response = Http::timeout(15)->withHeaders(['Authorization' => $this->token])
-                ->post("{$baseUrl}/api/send-message", $payload);
+            $response = Http::timeout(15)
+                ->withBasicAuth($sid, $token)
+                ->asForm()
+                ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                    'To'   => "whatsapp:+{$nomor}",
+                    'From' => "whatsapp:{$from}",
+                    'Body' => $pesan,
+                ]);
+
             if (!$response->successful()) {
-                Log::warning('WA gagal', ['nomor' => $nomor, 'body' => $response->body()]);
+                Log::warning('WA Twilio gagal', ['nomor' => $nomor, 'body' => $response->body()]);
                 return false;
             }
-            $body = $response->json();
-            if (isset($body['status']) && $body['status'] === false) {
-                Log::warning('WA gagal', ['nomor' => $nomor, 'body' => $body]);
-                return false;
-            }
+
             return true;
         } catch (\Exception $e) {
-            Log::error('WA error: ' . $e->getMessage());
+            Log::error('WA Twilio error: ' . $e->getMessage());
             return false;
         }
     }

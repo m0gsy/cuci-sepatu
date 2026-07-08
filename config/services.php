@@ -23,10 +23,10 @@ return [
         ],
     ],
 
-    'wablas' => [
-        'token'  => env('WABLAS_TOKEN'),
-        'secret' => env('WABLAS_SECRET'),
-        'url'    => env('WABLAS_URL', 'https://smg.wablas.com'),
+    'twilio' => [
+        'sid'   => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from'  => env('TWILIO_WHATSAPP_FROM'),
     ],
 
 ];
