@@ -14,25 +14,38 @@ class Voucher extends Model
 
     protected $casts = [
         'expired_at' => 'date',
-        'aktif'      => 'boolean',
+        'aktif' => 'boolean',
     ];
 
-    public function orders() { return $this->hasMany(Order::class); }
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
     public function hitungDiskon(int $total): int
     {
         if ($this->tipe === 'persen') {
-            return (int) round($total * $this->nilai / 100);
+            return min($total, (int) round($total * min($this->nilai, 100) / 100));
         }
+
         return min($this->nilai, $total);
     }
 
     public function masihBerlaku(int $total = 0): bool
     {
-        if (!$this->aktif) return false;
-        if ($this->expired_at && $this->expired_at->isPast()) return false;
-        if ($this->kuota !== null && $this->terpakai >= $this->kuota) return false;
-        if ($total > 0 && $total < $this->min_transaksi) return false;
+        if (! $this->aktif) {
+            return false;
+        }
+        if ($this->expired_at && $this->expired_at->isBefore(today())) {
+            return false;
+        }
+        if ($this->kuota !== null && $this->terpakai >= $this->kuota) {
+            return false;
+        }
+        if ($total > 0 && $total < $this->min_transaksi) {
+            return false;
+        }
+
         return true;
     }
 
@@ -40,22 +53,36 @@ class Voucher extends Model
     {
         return $this->tipe === 'persen'
             ? "{$this->nilai}%"
-            : 'Rp ' . number_format($this->nilai, 0, ',', '.');
+            : 'Rp '.number_format($this->nilai, 0, ',', '.');
     }
 
     public function getStatusBadgeAttribute(): string
     {
-        if (!$this->aktif) return 'bg-gray-100 text-gray-500';
-        if ($this->expired_at && $this->expired_at->isPast()) return 'bg-red-50 text-red-700';
-        if ($this->kuota !== null && $this->terpakai >= $this->kuota) return 'bg-orange-50 text-orange-700';
+        if (! $this->aktif) {
+            return 'bg-gray-100 text-gray-500';
+        }
+        if ($this->expired_at && $this->expired_at->isBefore(today())) {
+            return 'bg-red-50 text-red-700';
+        }
+        if ($this->kuota !== null && $this->terpakai >= $this->kuota) {
+            return 'bg-orange-50 text-orange-700';
+        }
+
         return 'bg-green-50 text-green-700';
     }
 
     public function getStatusLabelAttribute(): string
     {
-        if (!$this->aktif) return 'Nonaktif';
-        if ($this->expired_at && $this->expired_at->isPast()) return 'Expired';
-        if ($this->kuota !== null && $this->terpakai >= $this->kuota) return 'Habis';
+        if (! $this->aktif) {
+            return 'Nonaktif';
+        }
+        if ($this->expired_at && $this->expired_at->isBefore(today())) {
+            return 'Expired';
+        }
+        if ($this->kuota !== null && $this->terpakai >= $this->kuota) {
+            return 'Habis';
+        }
+
         return 'Aktif';
     }
 }

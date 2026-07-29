@@ -8,7 +8,7 @@
     |---|---|
     | **Owner** | Semua fitur |
     | **Admin** | Order, pelanggan, lokasi |
-    | **Cleaner** | Lihat order, update status, upload foto |
+    | **Cleaner** | Lihat order dan progres pekerjaan |
 
     > Owner bisa ubah hak akses Admin dan Cleaner lewat menu **Karyawan → Hak akses per role**.
 
@@ -80,7 +80,6 @@
     Di halaman detail order tersedia:
     - **Edit order** — ubah detail (hanya jika belum selesai)
     - **Tandai status** — update progress pengerjaan
-    - **Upload foto** — foto before/during/after
     - **Kirim invoice WA** — kirim rincian tagihan ke customer
     - **Kirim ulang WA** — kirim ulang notifikasi status
     - **Cetak nota** — buka PDF nota untuk dicetak
@@ -89,11 +88,12 @@
     Urutan status:
 
     ```
-    Diterima → Inspeksi → Dicuci → Kering → Finishing → Siap diambil → Selesai
+    Draft → Menunggu pembayaran → Diproses → Siap diambil → Selesai
     ```
 
-    - Saat status **Dicuci** → WA notifikasi "mulai diproses" otomatis terkirim
-    - Saat status **Siap diambil** → WA notifikasi "selesai, silakan ambil" otomatis terkirim + poin customer ditambah
+    - Saat status **Diproses** → WA notifikasi "mulai diproses" otomatis terkirim
+    - Saat status **Siap diambil** → WA notifikasi "selesai, silakan ambil" otomatis terkirim
+    - Saat status **Selesai** → pembayaran dilunasi jika perlu dan poin pelanggan ditambahkan satu kali
 
     ### Pelanggan
     Menu **Pelanggan** → lihat daftar, total belanja, poin, riwayat order.
@@ -114,14 +114,6 @@
 
     ### Update Status / Progress
     Buka detail order → **Tandai status** → pilih status sesuai progress pengerjaan.
-
-    ### Upload Foto
-    Di detail order → bagian **Foto** → pilih tipe foto:
-    - **Before** — kondisi sebelum dicuci
-    - **During** — proses pencucian
-    - **After** — hasil setelah selesai
-
-    Pilih file foto → **Upload**.
 
     ---
 
@@ -145,8 +137,8 @@
     | Trigger | Kapan | Isi |
     |---|---|---|
     | Order dibuat | Saat admin simpan order baru | Konfirmasi order, detail, estimasi, link tracking |
-    | Mulai dicuci | Status diubah ke *Dicuci* | Info pengerjaan dimulai + link tracking |
-    | Siap diambil | Status diubah ke *Siap diambil* | Notif selesai, total tagihan, poin earned + link tracking |
+    | Mulai diproses | Status diubah ke *Diproses* | Info pengerjaan dimulai + link tracking |
+    | Siap diambil | Status diubah ke *Siap diambil* | Notif selesai, total tagihan, estimasi poin + link tracking |
     | Invoice | Manual (tombol di detail order) | Rincian tagihan lengkap + link nota PDF |
 
     > Pastikan akun Twilio Anda memiliki saldo yang cukup agar WA bisa terkirim.

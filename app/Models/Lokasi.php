@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Lokasi extends Model
 {
     protected $fillable = ['kode', 'nama', 'deskripsi', 'harga_custom', 'harga_tambahan', 'aktif'];
-    protected $casts    = ['aktif' => 'boolean', 'harga_custom' => 'boolean'];
+
+    protected $casts = ['aktif' => 'boolean', 'harga_custom' => 'boolean'];
 
     public function orders()
     {
@@ -18,27 +19,35 @@ class Lokasi extends Model
     public function layanans()
     {
         return $this->belongsToMany(Layanan::class, 'lokasi_layanan')
-                    ->withPivot('harga')
-                    ->withTimestamps();
+            ->withPivot('harga')
+            ->withTimestamps();
     }
 
     // Ambil harga spesifik untuk layanan tertentu (null = tidak ada override)
     public function hargaUntukLayanan(int $layananId): ?int
     {
         $item = $this->layanans->firstWhere('id', $layananId);
+
         return $item ? $item->pivot->harga : null;
     }
 
     public function getOrderAktifCountAttribute(): int
     {
-        return $this->orders()->whereIn('status', ['antri', 'proses'])->count();
+        return $this->orders()
+            ->whereIn('status', ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil'])
+            ->count();
     }
 
     public function getStatusBadgeAttribute(): string
     {
         $count = $this->order_aktif_count;
-        if ($count === 0) return 'bg-green-50 text-green-700 ring-1 ring-green-200';
-        if ($count <= 3)  return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
+        if ($count === 0) {
+            return 'bg-green-50 text-green-700 ring-1 ring-green-200';
+        }
+        if ($count <= 3) {
+            return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
+        }
+
         return 'bg-red-50 text-red-700 ring-1 ring-red-200';
     }
 
@@ -47,16 +56,24 @@ class Lokasi extends Model
     {
         if ($layananId !== null) {
             $hargaSpesifik = $this->hargaUntukLayanan($layananId);
-            if ($hargaSpesifik !== null) return $hargaSpesifik;
+            if ($hargaSpesifik !== null) {
+                return $hargaSpesifik;
+            }
         }
-        if (!$this->harga_custom) return $hargaLayanan;
+        if (! $this->harga_custom) {
+            return $hargaLayanan;
+        }
+
         return $hargaLayanan + $this->harga_tambahan;
     }
 
     public function getHargaTambahanFormatAttribute(): string
     {
-        if ($this->harga_tambahan === 0) return 'Sama';
+        if ($this->harga_tambahan === 0) {
+            return 'Sama';
+        }
         $prefix = $this->harga_tambahan > 0 ? '+' : '';
-        return $prefix . 'Rp ' . number_format($this->harga_tambahan, 0, ',', '.');
+
+        return $prefix.'Rp '.number_format($this->harga_tambahan, 0, ',', '.');
     }
 }

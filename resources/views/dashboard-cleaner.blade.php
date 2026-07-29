@@ -5,7 +5,12 @@
 <div class="space-y-5">
 @php
     $byStatus = $aktif->groupBy('status');
-    $urutan   = ['diterima' => 'Diterima', 'inspeksi' => 'Inspeksi', 'dicuci' => 'Dicuci', 'kering' => 'Kering', 'finishing' => 'Finishing'];
+    $urutan = [
+        'draft' => 'Draft',
+        'menunggu_pembayaran' => 'Menunggu Pembayaran',
+        'diproses' => 'Diproses',
+        'siap_diambil' => 'Siap Diambil',
+    ];
 @endphp
 
 {{-- Summary cards --}}

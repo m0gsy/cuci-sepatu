@@ -7,16 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class OrderItem extends Model
 {
     protected $table = 'order_items';
+
     protected $fillable = [
         'order_id', 'layanan_id', 'jenis_barang_id', 'jumlah_pasang', 'harga_satuan',
-        'merek', 'warna', 'kondisi', 'hpp', 'gross_profit', 'gross_margin'
+        'merek', 'warna', 'kondisi', 'hpp', 'gross_profit', 'gross_margin',
     ];
+
     protected $casts = [
         'jumlah_pasang' => 'integer',
         'harga_satuan' => 'integer',
         'hpp' => 'integer',
         'gross_profit' => 'integer',
-        'gross_margin' => 'decimal:2'
+        'gross_margin' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -51,21 +53,22 @@ class OrderItem extends Model
 
     public function getHargaTotalFormatAttribute()
     {
-        return 'Rp ' . number_format($this->harga_total, 0, ',', '.');
+        return 'Rp '.number_format($this->harga_total, 0, ',', '.');
     }
 
     public function getNetSalesAttribute()
     {
         $order = $this->order;
-        if (!$order) {
+        if (! $order) {
             return $this->harga_total;
         }
         $grossOrder = $order->gross_sales;
         if ($grossOrder === 0) {
             return 0;
         }
-        $diskonOrder = $order->diskon;
+        $diskonOrder = ($order->diskon ?? 0) + ($order->diskon_poin ?? 0);
         $fraction = $diskonOrder / $grossOrder;
-        return (int)round($this->harga_total * (1 - $fraction));
+
+        return (int) round($this->harga_total * (1 - $fraction));
     }
 }

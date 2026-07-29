@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\RolePermission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -13,19 +13,17 @@ class KaryawanController extends Controller
     public function index()
     {
         $karyawans = User::withCount([
-                'orders as order_bulan_ini' => fn($q) =>
-                    $q->whereYear('orders.created_at', now()->year)
-                      ->whereMonth('orders.created_at', now()->month),
-                'orders as order_hari_ini' => fn($q) =>
-                    $q->whereDate('orders.created_at', today()),
-            ])
+            'orders as order_bulan_ini' => fn ($q) => $q->whereYear('orders.created_at', now()->year)
+                ->whereMonth('orders.created_at', now()->month),
+            'orders as order_hari_ini' => fn ($q) => $q->whereDate('orders.created_at', today()),
+        ])
             ->orderBy('aktif', 'desc')
             ->orderBy('role')
             ->orderBy('name')
             ->get();
 
-        $allPermissions    = RolePermission::allPermissions();
-        $adminPermissions  = RolePermission::forRole('admin');
+        $allPermissions = RolePermission::allPermissions();
+        $adminPermissions = RolePermission::forRole('admin');
         $cleanerPermissions = RolePermission::forRole('cleaner');
 
         return view('karyawans.index', compact('karyawans', 'allPermissions', 'adminPermissions', 'cleanerPermissions'));
@@ -38,20 +36,20 @@ class KaryawanController extends Controller
             ->latest()->paginate(10);
 
         $stats = [
-            'total_order'     => $karyawan->orders()->count(),
+            'total_order' => $karyawan->orders()->count(),
             'order_bulan_ini' => $karyawan->orders()
                 ->whereYear('orders.created_at', now()->year)
                 ->whereMonth('orders.created_at', now()->month)->count(),
-            'order_hari_ini'  => $karyawan->orders()
+            'order_hari_ini' => $karyawan->orders()
                 ->whereDate('orders.created_at', today())->count(),
-            'total_diproses'  => $karyawan->orders()
+            'total_diproses' => $karyawan->orders()
                 ->join('pembayarans', 'orders.id', '=', 'pembayarans.order_id')
                 ->where('pembayarans.status', 'selesai')->sum('pembayarans.total'),
         ];
 
         $driver = DB::getDriverName();
-        $yearExpr = $driver === 'sqlite' ? "strftime('%Y', orders.created_at)" : "YEAR(orders.created_at)";
-        $monthExpr = $driver === 'sqlite' ? "CAST(strftime('%m', orders.created_at) as integer)" : "MONTH(orders.created_at)";
+        $yearExpr = $driver === 'sqlite' ? "strftime('%Y', orders.created_at)" : 'YEAR(orders.created_at)';
+        $monthExpr = $driver === 'sqlite' ? "CAST(strftime('%m', orders.created_at) as integer)" : 'MONTH(orders.created_at)';
 
         $rekapBulanan = $karyawan->orders()
             ->select(
@@ -69,22 +67,22 @@ class KaryawanController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role'     => 'required|in:owner,admin,cleaner',
-            'no_hp'    => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
-            'alamat'   => 'nullable|string|max:200',
+            'role' => 'required|in:owner,admin,cleaner',
+            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
+            'alamat' => 'nullable|string|max:200',
         ]);
 
         User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-            'no_hp'    => $data['no_hp'] ?? null,
-            'alamat'   => $data['alamat'] ?? null,
-            'aktif'    => true,
+            'role' => $data['role'],
+            'no_hp' => $data['no_hp'] ?? null,
+            'alamat' => $data['alamat'] ?? null,
+            'aktif' => true,
         ]);
 
         return back()->with('success', "Akun {$data['name']} berhasil dibuat.");
@@ -97,14 +95,15 @@ class KaryawanController extends Controller
         }
 
         $data = $request->validate([
-            'name'   => 'required|string|max:100',
-            'email'  => 'required|email|unique:users,email,' . $karyawan->id,
-            'role'   => 'required|in:owner,admin,cleaner',
-            'no_hp'  => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email,'.$karyawan->id,
+            'role' => 'required|in:owner,admin,cleaner',
+            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
             'alamat' => 'nullable|string|max:200',
         ]);
 
         $karyawan->update($data);
+
         return back()->with('success', "Data {$karyawan->name} berhasil diperbarui.");
     }
 
@@ -112,13 +111,14 @@ class KaryawanController extends Controller
     {
         $data = $request->validate(['password' => 'required|string|min:8|confirmed']);
         $karyawan->update(['password' => Hash::make($data['password'])]);
+
         return back()->with('success', "Password {$karyawan->name} berhasil direset.");
     }
 
     public function savePermissions(Request $request)
     {
         $allKeys = collect(RolePermission::allPermissions())->pluck('key')->toArray();
-        $roles   = ['admin', 'cleaner'];
+        $roles = ['admin', 'cleaner'];
 
         DB::transaction(function () use ($roles, $allKeys, $request) {
             foreach ($roles as $role) {
@@ -153,8 +153,13 @@ class KaryawanController extends Controller
             }
         }
 
-        $karyawan->update(['aktif' => !$karyawan->aktif]);
+        $karyawan->update(['aktif' => ! $karyawan->aktif]);
+        if (! $karyawan->aktif) {
+            $karyawan->forceFill(['remember_token' => null])->save();
+            DB::table('sessions')->where('user_id', $karyawan->id)->delete();
+        }
         $status = $karyawan->aktif ? 'diaktifkan' : 'dinonaktifkan';
+
         return back()->with('success', "{$karyawan->name} berhasil {$status}.");
     }
 }

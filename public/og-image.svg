@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f5f2e9"/>
+  <circle cx="1050" cy="90" r="250" fill="#bbe6cf" opacity=".55"/>
+  <circle cx="110" cy="580" r="260" fill="#d7e7dd"/>
+  <rect x="105" y="115" width="86" height="86" rx="22" fill="#1a3a2a"/>
+  <path d="M130 167c10 0 17-3 24-10l7-7 10 11c3 3 1 8-3 10-12 6-27 7-40 3-5-2-4-7 2-7Z" fill="#fff"/>
+  <text x="105" y="300" font-family="Georgia, serif" font-size="74" font-weight="700" fill="#17231d">Step Shine Works</text>
+  <text x="108" y="372" font-family="Verdana, sans-serif" font-size="30" fill="#506158">Perawatan sepatu yang rapi, transparan, dan terlacak.</text>
+  <rect x="108" y="425" width="360" height="8" rx="4" fill="#1a3a2a"/>
+</svg>

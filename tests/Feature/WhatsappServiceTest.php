@@ -18,12 +18,13 @@ class WhatsappServiceTest extends TestCase
     use RefreshDatabase;
 
     protected WhatsappService $whatsappService;
+
     protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->whatsappService = new WhatsappService();
+        $this->whatsappService = new WhatsappService;
 
         // Create a test user
         $this->user = User::factory()->create([
@@ -80,7 +81,7 @@ class WhatsappServiceTest extends TestCase
         Pembayaran::create([
             'order_id' => $order->id,
             'total' => 70000, // 30k + 2 * 20k
-            'metode' => 'tunai',
+            'metode' => 'cash',
             'status' => 'belum_selesai',
         ]);
 
@@ -90,6 +91,7 @@ class WhatsappServiceTest extends TestCase
         // 4. Compile messages
         $messageMasuk = $this->whatsappService->pesanOrderMasuk($order);
         $messageInvoice = $this->whatsappService->pesanInvoice($order);
+        $messageSelesai = $this->whatsappService->pesanOrderSelesai($order);
 
         // 5. Assertions
         $this->assertStringContainsString('Andi', $messageMasuk);
@@ -102,6 +104,8 @@ class WhatsappServiceTest extends TestCase
         $this->assertStringContainsString('- Cuci Biasa (Sneakers): 1 pasang x Rp 30.000', $messageInvoice);
         $this->assertStringContainsString('- Cuci Sandal (Sandal): 2 pasang x Rp 20.000', $messageInvoice);
         $this->assertStringContainsString('Rp 70.000', $messageInvoice);
+        $this->assertStringContainsString('Estimasi poin', $messageSelesai);
+        $this->assertStringContainsString('setelah order selesai', $messageSelesai);
     }
 
     public function test_it_compiles_whatsapp_message_for_legacy_single_item_order(): void

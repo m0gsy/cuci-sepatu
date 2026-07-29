@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Operasional;
+use App\Models\RolePermission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,12 +19,12 @@ class LaporanOperasionalTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create(['aktif' => true, 'role' => 'admin']);
-        
-        \App\Models\RolePermission::create([
+
+        RolePermission::create([
             'role' => 'admin',
             'permission' => 'laporan',
         ]);
-        \App\Models\RolePermission::create([
+        RolePermission::create([
             'role' => 'admin',
             'permission' => 'operasional',
         ]);
@@ -81,7 +82,7 @@ class LaporanOperasionalTest extends TestCase
         $response->assertRedirect();
 
         $this->assertDatabaseMissing('operasionals', [
-            'id' => $expense->id
+            'id' => $expense->id,
         ]);
     }
 }

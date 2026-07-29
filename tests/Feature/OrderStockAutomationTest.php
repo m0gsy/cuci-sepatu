@@ -8,11 +8,11 @@ use App\Models\KategoriLayanan;
 use App\Models\Layanan;
 use App\Models\LayananRecipe;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Stok;
-use App\Models\StokMutasi;
 use App\Models\User;
+use App\Services\StockAutomationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class OrderStockAutomationTest extends TestCase
@@ -20,9 +20,13 @@ class OrderStockAutomationTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected KategoriLayanan $category;
+
     protected JenisBarang $jenisBarang;
+
     protected Layanan $layanan;
+
     protected Bahan $bahan;
 
     protected function setUp(): void
@@ -92,7 +96,7 @@ class OrderStockAutomationTest extends TestCase
                     'merek' => 'Nike',
                     'warna' => 'Hitam',
                     'kondisi' => 'Kotor',
-                ]
+                ],
             ],
         ];
 
@@ -141,7 +145,7 @@ class OrderStockAutomationTest extends TestCase
                     'merek' => 'Adidas',
                     'warna' => 'Putih',
                     'kondisi' => 'Noda tanah',
-                ]
+                ],
             ],
         ];
 
@@ -176,8 +180,9 @@ class OrderStockAutomationTest extends TestCase
             'hpp' => 2000,
         ]);
 
-        // Run stock automation deduction manually first or simulate it
-        $this->bahan->stok->update(['stok_saat_ini' => 80.00]);
+        app(StockAutomationService::class)
+            ->deductStock($order->load('items.layanan'));
+        $this->assertEquals(80, $this->bahan->stok->fresh()->stok_saat_ini);
 
         // Transition status to batal (cancelled)
         $response = $this->patch(route('orders.status', $order), [
@@ -198,6 +203,39 @@ class OrderStockAutomationTest extends TestCase
             'tipe' => 'masuk',
             'jumlah' => 20.00,
             'keterangan' => "Pengembalian stok pembatalan order {$order->no_order}",
+        ]);
+    }
+
+    public function test_partial_deduction_reverses_only_the_amount_actually_removed(): void
+    {
+        $this->actingAs($this->user);
+        $this->bahan->stok->update(['stok_saat_ini' => 5]);
+
+        $payload = [
+            'idempotency_key' => (string) Str::uuid(),
+            'nama_pelanggan' => 'Partial Stock',
+            'no_hp' => '08123456780',
+            'estimasi_selesai' => now()->addDays(3)->format('Y-m-d\TH:i'),
+            'metode_bayar' => 'cash',
+            'items' => [[
+                'layanan_id' => $this->layanan->id,
+                'jenis_barang_id' => $this->jenisBarang->id,
+                'jumlah_pasang' => 2,
+            ]],
+        ];
+
+        $this->post(route('orders.store'), $payload)->assertRedirect();
+        $order = Order::where('nama_pelanggan', 'Partial Stock')->firstOrFail();
+        $this->assertEquals(0, $this->bahan->stok->fresh()->stok_saat_ini);
+
+        $this->patch(route('orders.status', $order), ['status' => 'batal'])
+            ->assertRedirect();
+
+        $this->assertEquals(5, $this->bahan->stok->fresh()->stok_saat_ini);
+        $this->assertDatabaseHas('stok_mutasis', [
+            'order_id' => $order->id,
+            'tipe' => 'keluar',
+            'jumlah' => 5,
         ]);
     }
 }

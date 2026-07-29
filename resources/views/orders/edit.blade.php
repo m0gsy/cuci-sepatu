@@ -219,7 +219,7 @@
 <script>
 function editForm() {
     // Standardize existing items
-    const rawItems = @json($order->items);
+    const rawItems = @json(old('items', $order->items->toArray()));
     const mappedItems = rawItems.map(item => ({
         id: item.id,
         layanan_id: item.layanan_id,
@@ -240,7 +240,11 @@ function editForm() {
                 "{{ $l->id }}": {
                     harga: {{ $l->harga }},
                     hpp: {{ $l->total_hpp }},
-                    hari: {{ $l->estimasi_hari }}
+                    menit: {{ match(strtolower($l->estimasi_satuan)) {
+                        'jam' => $l->estimasi_nilai * 60,
+                        'minggu' => $l->estimasi_nilai * 10080,
+                        default => $l->estimasi_nilai * 1440,
+                    } }}
                 },
             @endforeach
         },

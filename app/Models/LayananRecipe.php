@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class LayananRecipe extends Model
 {
     protected $table = 'layanan_recipes';
+
     protected $fillable = ['layanan_id', 'bahan_id', 'jumlah_penggunaan'];
+
     protected $casts = [
-        'jumlah_penggunaan' => 'decimal:2'
+        'jumlah_penggunaan' => 'decimal:2',
     ];
 
     public function layanan()

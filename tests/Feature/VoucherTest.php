@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\RolePermission;
 use App\Models\User;
 use App\Models\Voucher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,8 +20,8 @@ class VoucherTest extends TestCase
 
         // Assigning vouchers permission to admin role
         $this->admin = User::factory()->create(['aktif' => true, 'role' => 'admin']);
-        
-        \App\Models\RolePermission::create([
+
+        RolePermission::create([
             'role' => 'admin',
             'permission' => 'vouchers',
         ]);
@@ -90,13 +91,13 @@ class VoucherTest extends TestCase
         // Valid voucher
         $response = $this->get(route('vouchers.cek', [
             'kode' => 'PROMO20K',
-            'total' => 150000
+            'total' => 150000,
         ]));
 
         $response->assertStatus(200);
         $response->assertJson([
             'valid' => true,
-            'diskon' => 20000
+            'diskon' => 20000,
         ]);
     }
 
@@ -115,12 +116,12 @@ class VoucherTest extends TestCase
         // Expired
         $response = $this->get(route('vouchers.cek', [
             'kode' => 'EXPIRED',
-            'total' => 50000
+            'total' => 50000,
         ]));
 
         $response->assertStatus(200);
         $response->assertJson([
-            'valid' => false
+            'valid' => false,
         ]);
 
         // Below minimum transaction amount
@@ -134,12 +135,43 @@ class VoucherTest extends TestCase
 
         $response2 = $this->get(route('vouchers.cek', [
             'kode' => 'BIGSPEND',
-            'total' => 100000
+            'total' => 100000,
         ]));
 
         $response2->assertStatus(200);
         $response2->assertJson([
-            'valid' => false
+            'valid' => false,
         ]);
+    }
+
+    public function test_voucher_code_is_normalized_and_percentage_cannot_exceed_one_hundred(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post(route('vouchers.store'), [
+            'kode' => 'promo10',
+            'tipe' => 'persen',
+            'nilai' => 10,
+        ])->assertRedirect();
+        $this->assertDatabaseHas('vouchers', ['kode' => 'PROMO10']);
+
+        $this->post(route('vouchers.store'), [
+            'kode' => 'OVER100',
+            'tipe' => 'persen',
+            'nilai' => 101,
+        ])->assertSessionHasErrors('nilai');
+    }
+
+    public function test_voucher_is_valid_through_its_expiration_date(): void
+    {
+        $voucher = Voucher::create([
+            'kode' => 'TODAY',
+            'tipe' => 'nominal',
+            'nilai' => 1000,
+            'expired_at' => today(),
+            'aktif' => true,
+        ]);
+
+        $this->assertTrue($voucher->masihBerlaku(10000));
     }
 }

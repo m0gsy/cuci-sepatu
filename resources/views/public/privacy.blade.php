@@ -119,12 +119,12 @@
                 <p class="text-sm mb-3">Platform kami menggunakan layanan pihak ketiga berikut:</p>
                 <div class="space-y-3">
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="font-semibold text-sm text-gray-900">Meta WhatsApp Business API</p>
-                        <p class="text-xs text-gray-600 mt-1">Digunakan untuk mengirim notifikasi WhatsApp otomatis kepada pelanggan bisnis Anda. Data nomor telepon pelanggan dikirimkan ke API Meta untuk proses pengiriman pesan. Penggunaan data tunduk pada <a href="https://www.whatsapp.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Privasi WhatsApp/Meta</a>.</p>
+                        <p class="font-semibold text-sm text-gray-900">Twilio WhatsApp API</p>
+                        <p class="text-xs text-gray-600 mt-1">Digunakan untuk mengirim notifikasi WhatsApp otomatis kepada pelanggan bisnis Anda. Nomor telepon dan isi pesan diproses oleh Twilio dan WhatsApp untuk pengiriman. Penggunaan data tunduk pada <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Privasi Twilio</a> dan <a href="https://www.whatsapp.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Privasi WhatsApp</a>.</p>
                     </div>
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="font-semibold text-sm text-gray-900">Infrastruktur Hosting</p>
-                        <p class="text-xs text-gray-600 mt-1">Data disimpan di server hosting yang berlokasi di Indonesia. Kami menggunakan enkripsi HTTPS untuk semua komunikasi data.</p>
+                        <p class="text-xs text-gray-600 mt-1">Data disimpan pada infrastruktur yang dikonfigurasi oleh operator layanan. Lokasi penyimpanan, retensi backup, dan kontrol jaringan mengikuti lingkungan deployment yang digunakan.</p>
                     </div>
                 </div>
             </article>
@@ -132,11 +132,11 @@
             <article>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">6. Penyimpanan dan Keamanan Data</h2>
                 <ul class="list-disc list-inside space-y-2 text-sm pl-2">
-                    <li>Semua komunikasi dienkripsi menggunakan HTTPS/TLS</li>
-                    <li>Kata sandi di-hash menggunakan algoritma bcrypt yang kuat</li>
+                    <li>Deployment produksi wajib menggunakan HTTPS/TLS</li>
+                    <li>Kata sandi disimpan dalam bentuk hash satu arah</li>
                     <li>Akses data dibatasi berdasarkan peran pengguna (role-based access)</li>
-                    <li>Database dilindungi dengan autentikasi dan firewall</li>
-                    <li>Log aktivitas disimpan untuk keperluan keamanan dan audit</li>
+                    <li>Session pengguna dicabut ketika akun dinonaktifkan</li>
+                    <li>Keamanan database, firewall, dan backup dikelola pada lingkungan deployment</li>
                 </ul>
             </article>
 

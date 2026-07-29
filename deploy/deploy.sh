@@ -1,40 +1,42 @@
-#!/bin/bash
-# Deploy script untuk Step Shine Works
-# Jalankan dari root project: bash deploy/deploy.sh
+#!/usr/bin/env bash
 
-set -e   # stop jika ada error
+set -Eeuo pipefail
 
-echo "=== Step Shine Works — Deploy ==="
+cd "$(dirname "$0")/.."
 
-# 1. Pull kode terbaru
-git pull origin main
+exec 9>/tmp/step-shine-deploy.lock
+flock -n 9 || {
+    echo "Another deployment is already running."
+    exit 1
+}
 
-# 2. Install/update dependencies (tanpa dev packages)
-composer install --no-dev --optimize-autoloader
+if [[ -z "${COMPOSER_AUTH:-}" ]] && ! composer config --global --auth github-oauth.github.com >/dev/null 2>&1; then
+    echo "Configure COMPOSER_AUTH or a global GitHub OAuth token before deploying."
+    exit 1
+fi
 
-# 3. Build frontend assets
-npm ci
+php artisan down --retry=60
+trap 'echo "Deployment failed; application remains in maintenance mode."' ERR
+
+git pull --ff-only origin main
+
+composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+npm ci --include=dev
 npm run build
+npm prune --omit=dev
 
-# 4. Jalankan migrasi
+php artisan backup:database
 php artisan migrate --force
-
-# 5. Buat symbolic link storage (foto upload)
-php artisan storage:link 2>/dev/null || echo "Storage link sudah ada."
-
-# 6. Clear semua cache lama dulu
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-
-# 7. Buat cache baru (lebih cepat dari file cache biasa)
+php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan app:production-check
 
-# 8. Restart queue worker agar pakai kode terbaru
 sudo supervisorctl restart step-shine-queue:*
+sudo supervisorctl restart step-shine-scheduler
 
-echo ""
-echo "=== Deploy selesai! ==="
-echo "Cek status queue: sudo supervisorctl status"
+php artisan up
+trap - ERR
+
+echo "Deployment complete."

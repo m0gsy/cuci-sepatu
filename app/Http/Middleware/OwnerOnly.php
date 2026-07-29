@@ -9,9 +9,10 @@ class OwnerOnly
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check() || !auth()->user()->isOwner()) {
+        if (! auth()->check() || ! auth()->user()->isOwner()) {
             abort(403, 'Halaman ini hanya untuk owner.');
         }
+
         return $next($request);
     }
 }

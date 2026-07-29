@@ -45,11 +45,11 @@
                     Simpan
                 </button>
                 <a href="{{ route('wa-templates.index') }}" class="text-sm text-gray-500 hover:text-gray-900">Batal</a>
-                <form method="POST" action="{{ route('wa-templates.reset', $template) }}" class="ml-auto" onsubmit="return confirm('Reset ke template default?')">
-                    @csrf
-                    <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Reset ke default</button>
-                </form>
             </div>
+        </form>
+        <form method="POST" action="{{ route('wa-templates.reset', $template) }}" class="mt-3" onsubmit="return confirm('Reset ke template default?')">
+            @csrf
+            <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Reset ke default</button>
         </form>
     </div>
 </div>

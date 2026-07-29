@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // Tabel lokasi — sekarang punya harga sendiri
-        if (!Schema::hasTable('lokasis')) {
+        if (! Schema::hasTable('lokasis')) {
             Schema::create('lokasis', function (Blueprint $table) {
                 $table->id();
                 $table->string('kode', 20)->unique();
@@ -23,19 +23,19 @@ return new class extends Migration
         }
 
         Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'lokasi_id')) {
+            if (! Schema::hasColumn('orders', 'lokasi_id')) {
                 $table->foreignId('lokasi_id')->nullable()->after('pelanggan_id')
-                      ->constrained('lokasis')->nullOnDelete();
+                    ->constrained('lokasis')->nullOnDelete();
             }
-            if (!Schema::hasColumn('orders', 'hpp')) {
+            if (! Schema::hasColumn('orders', 'hpp')) {
                 $table->integer('hpp')->default(0)->after('lokasi_id');
             }
-            if (!Schema::hasColumn('orders', 'catatan_lokasi')) {
+            if (! Schema::hasColumn('orders', 'catatan_lokasi')) {
                 $table->string('catatan_lokasi')->nullable()->after('hpp');
             }
         });
 
-        if (!Schema::hasTable('hpp_layanans')) {
+        if (! Schema::hasTable('hpp_layanans')) {
             Schema::create('hpp_layanans', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('layanan_id')->constrained('layanans')->cascadeOnDelete();
@@ -49,9 +49,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            if (Schema::hasColumn('orders', 'lokasi_id'))      { $table->dropForeign(['lokasi_id']); $table->dropColumn('lokasi_id'); }
-            if (Schema::hasColumn('orders', 'hpp'))             $table->dropColumn('hpp');
-            if (Schema::hasColumn('orders', 'catatan_lokasi'))  $table->dropColumn('catatan_lokasi');
+            if (Schema::hasColumn('orders', 'lokasi_id')) {
+                $table->dropForeign(['lokasi_id']);
+                $table->dropColumn('lokasi_id');
+            }
+            if (Schema::hasColumn('orders', 'hpp')) {
+                $table->dropColumn('hpp');
+            }
+            if (Schema::hasColumn('orders', 'catatan_lokasi')) {
+                $table->dropColumn('catatan_lokasi');
+            }
         });
         Schema::dropIfExists('hpp_layanans');
         Schema::dropIfExists('lokasis');

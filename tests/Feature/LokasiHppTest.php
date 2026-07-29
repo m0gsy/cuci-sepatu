@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\JenisBarang;
 use App\Models\KategoriLayanan;
 use App\Models\Layanan;
 use App\Models\Lokasi;
+use App\Models\RolePermission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,7 +15,9 @@ class LokasiHppTest extends TestCase
     use RefreshDatabase;
 
     protected User $owner;
+
     protected User $admin;
+
     protected Layanan $layanan;
 
     protected function setUp(): void
@@ -26,11 +28,11 @@ class LokasiHppTest extends TestCase
         $this->admin = User::factory()->create(['aktif' => true, 'role' => 'admin']);
 
         // Set up permissions for admin
-        \App\Models\RolePermission::firstOrCreate([
+        RolePermission::firstOrCreate([
             'role' => 'admin',
             'permission' => 'lokasi',
         ]);
-        \App\Models\RolePermission::firstOrCreate([
+        RolePermission::firstOrCreate([
             'role' => 'admin',
             'permission' => 'hpp',
         ]);
@@ -88,7 +90,7 @@ class LokasiHppTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('lokasi_layanan', [
             'lokasi_id' => $lokasi->id,
             'layanan_id' => $this->layanan->id,

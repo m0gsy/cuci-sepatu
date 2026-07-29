@@ -1,48 +1,73 @@
-# Fitur Manajemen Karyawan
+# Step Shine Works
 
-## File yang perlu dicopy ke project Laravel
+Laravel application for shoe-care order tracking, payments, loyalty points,
+vouchers, inventory, reports, and WhatsApp notifications.
 
-### 1. Migration
-Jalankan dulu:
+## Requirements
+
+- PHP 8.3 with PDO MySQL, mbstring, openssl, tokenizer, XML, ctype, JSON, BCMath, and ZIP
+- MySQL 8 or MariaDB 10.6+
+- Composer 2
+- Node.js 20+
+- Supervisor on production hosts
+
+## Setup
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+npm ci
+npm run build
+php artisan migrate --force
 ```
-php artisan migrate
+
+Set these production values before the first migration or seed:
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://example.com
+DB_CONNECTION=mysql
+SESSION_SECURE_COOKIE=true
+SEED_ADMIN_PASSWORD=use-a-unique-secret
+TWILIO_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_WHATSAPP_FROM=
+MAIL_ADMIN_ADDRESS=
 ```
-File: database/migrations/2025_01_02_000001_add_karyawan_fields_to_users_table.php
 
-### 2. Models
-- app/Models/User.php → TIMPA file yang sudah ada
+`SEED_ADMIN_PASSWORD` is required by `DatabaseSeeder`; no default password is
+stored in the repository.
 
-### 3. Middleware
-- app/Http/Middleware/AdminOnly.php → file BARU
+## Workers
 
-### 4. Controllers
-- app/Http/Controllers/KaryawanController.php → file BARU
-- app/Http/Controllers/Auth/AuthenticatedSessionController.php → TIMPA file yang sudah ada
+Install [deploy/supervisor.conf](deploy/supervisor.conf) and adjust its project
+path and operating-system user. It runs both:
 
-### 5. Routes
-- routes/web.php → TIMPA file yang sudah ada (sudah include semua route sebelumnya)
+- `php artisan queue:work database`
+- `php artisan schedule:work`
 
-### 6. bootstrap/app.php
-- bootstrap/app.php → TIMPA file yang sudah ada (untuk daftarkan middleware 'admin')
+The scheduler executes database backups and overdue-order notifications.
 
-### 7. Views
-- resources/views/layouts/app.blade.php → TIMPA (ada menu Karyawan untuk admin)
-- resources/views/karyawans/index.blade.php → file BARU
-- resources/views/karyawans/show.blade.php → file BARU
+## Release
 
-### 8. Seeder (opsional)
-- database/seeders/DatabaseSeeder.php → TIMPA (sudah include akun operator contoh)
-  Jalankan: php artisan db:seed
+Run `bash deploy/deploy.sh` from the project root, or execute the same steps
+manually. The script requires Composer GitHub authentication, locks concurrent
+deployments, creates a database backup before migration, and leaves the
+application in maintenance mode on failure. Before routing traffic, verify:
 
-## Login default
-- Admin  : admin@cucisepatu.com  / password
-- Operator: andi@cucisepatu.com  / password
+```bash
+php artisan about --only=environment
+php artisan migrate:status
+php artisan route:cache
+php artisan view:cache
+php artisan schedule:list
+php artisan app:production-check
+php artisan test
+npm run build
+composer audit --locked
+npm audit
+```
 
-## Fitur
-- Daftar karyawan + statistik order hari ini & bulan ini
-- Role admin (ungu) vs operator (biru)
-- Edit data, reset password, aktifkan/nonaktifkan inline
-- Halaman detail: statistik, grafik 6 bulan, semua order
-- Operator yang dinonaktifkan tidak bisa login
-- Menu Karyawan hanya tampil untuk admin
-- Minimal 1 admin aktif harus ada
+The application health endpoint is `/up`.

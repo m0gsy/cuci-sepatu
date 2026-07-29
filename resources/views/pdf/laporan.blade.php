@@ -199,7 +199,7 @@ table.data tfoot td {
                 Rp {{ number_format($o->pembayaran?->total ?? 0, 0, ',', '.') }}
             </td>
             <td class="center">
-                <span style="color: {{ $o->pembayaran?->status === 'lunas' ? '#065F46' : '#92400E' }}; font-size:9px;">
+                <span style="color: {{ $o->pembayaran?->status === 'selesai' ? '#065F46' : '#92400E' }}; font-size:9px;">
                     {{ ucfirst($o->pembayaran?->status ?? '-') }}
                 </span>
             </td>

@@ -11,7 +11,6 @@ Pertanyaan yang sering diajukan oleh administrator sistem.
 Pastikan email dan password benar (case-sensitive). Jika tetap tidak bisa, kemungkinan:
 - Akun dinonaktifkan oleh Owner → hubungi Owner untuk mengaktifkan kembali.
 - Password salah → gunakan fitur "Lupa Password?" di halaman login.
-- Email belum terverifikasi → periksa kotak masuk email dan klik link verifikasi.
 
 **2. Bagaimana cara reset password?**
 
@@ -35,11 +34,11 @@ Ya, Owner bisa menonaktifkan akun karyawan kapan saja. Jika Anda tiba-tiba tidak
 
 **6. Bagaimana format nomor order?**
 
-Format: `ORD-YYYYMMDD-XXXX`. Contoh: `ORD-20260703-0001`. Nomor urut di-reset setiap hari.
+Format: `ORD-YYYYMMDD-XXXXXX`. Contoh: `ORD-20260703-A1B2C3`. Enam karakter terakhir dibuat acak.
 
 **7. Bisakah dua order punya nomor yang sama?**
 
-Tidak. Sistem menggunakan database lock untuk mencegah duplikasi nomor order pada input bersamaan.
+Tidak. Kolom nomor order memiliki unique constraint; suffix acak menghindari collision saat input bersamaan.
 
 **8. Apakah pelanggan harus didaftarkan dulu sebelum membuat order?**
 
@@ -51,15 +50,15 @@ Sistem menggunakan nomor HP sebagai identifikasi unik pelanggan. Jika nama berbe
 
 **10. Saya salah memasukkan data order. Bisakah diedit?**
 
-Ya, selama status order belum `siap_diambil`, `selesai`, atau `diambil`. Buka detail order → klik **Edit Order**.
+Ya, selama status order belum `siap_diambil`, `selesai`, atau `batal`. Buka detail order → klik **Edit Order**.
 
 **11. Bisakah saya mengubah order yang sudah selesai?**
 
-Tidak. Order dengan status `siap_diambil`, `selesai`, atau `diambil` tidak bisa diedit untuk menjaga integritas data.
+Tidak. Order dengan status `siap_diambil`, `selesai`, atau `batal` tidak bisa diedit untuk menjaga integritas data.
 
 **12. Bagaimana cara membatalkan order?**
 
-Tidak ada fitur batal order di sistem. Untuk order yang perlu dibatalkan, Anda bisa mengubah status ke `selesai` dan tandai sebagai lunas dengan nominal Rp 0 (Perlu Verifikasi Manual — tidak ada fitur khusus cancel di codebase).
+Order dapat dibatalkan selama masih `draft` atau `menunggu_pembayaran`. Setelah pengerjaan dimulai, pembatalan harus ditangani owner secara manual agar stok bahan yang sudah digunakan tidak dikembalikan secara keliru.
 
 **13. Apakah bisa input order untuk lebih dari 1 pasang sekaligus?**
 
@@ -73,13 +72,13 @@ Ketiganya langsung menandai pembayaran sebagai lunas saat order dibuat. Perbedaa
 
 Filter daftar order berdasarkan status, atau lihat kolom status pembayaran di tabel order. Halaman detail order juga menampilkan status pembayaran dengan jelas.
 
-**16. Apakah status bisa diubah mundur (contoh: dari `dicuci` kembali ke `inspeksi`)?**
+**16. Apakah status bisa diubah mundur?**
 
-Ya, sistem tidak membatasi perubahan status ke arah mundur. Namun trigger otomatis (kirim WA, tambah poin) hanya terjadi satu arah.
+Tidak. Status hanya dapat bergerak maju sesuai alur agar trigger stok, pembayaran, WA, dan poin tetap konsisten.
 
-**17. Mengapa ada status `antri`, `proses`, `diambil` di sistem?**
+**17. Apa alur status order?**
 
-Ini adalah status lama (legacy) untuk order yang diinput sebelum sistem diperbarui ke alur 7 tahap. Order baru menggunakan status `diterima` s.d. `selesai`.
+`draft → menunggu_pembayaran → diproses → siap_diambil → selesai`. Dari `draft` atau `menunggu_pembayaran`, order juga dapat dibatalkan.
 
 **18. Kapan `selesai_pada` diisi?**
 
@@ -136,10 +135,10 @@ Tidak. Satu order hanya bisa menggunakan satu voucher.
 **27. WA tidak terkirim ke pelanggan. Apa penyebabnya?**
 
 Kemungkinan penyebab:
-- `WABLAS_TOKEN` belum diisi di file `.env`
-- Token Wablas tidak valid atau sudah expired
+- Kredensial `TWILIO_*` belum lengkap di file `.env`
+- Auth token atau SID Twilio tidak valid
 - Nomor HP pelanggan tidak valid atau tidak terdaftar di WhatsApp
-- Server Wablas sedang down
+- API Twilio sedang bermasalah
 - Lihat log di `storage/logs/laravel.log` untuk detail error
 
 **28. Kapan saja WA dikirim otomatis?**
@@ -147,7 +146,7 @@ Kemungkinan penyebab:
 | Trigger | Template |
 |---------|---------|
 | Order baru dibuat | `order_masuk` |
-| Status berubah ke `dicuci` | `mulai_dicuci` |
+| Status berubah ke `diproses` | `mulai_dicuci` |
 | Status berubah ke `siap_diambil` | `order_selesai` |
 
 **29. Bagaimana cara kirim ulang WA yang gagal?**
@@ -172,11 +171,11 @@ Ya. Menu **Template WA** → pilih template → edit isi pesan → simpan. Gunak
 
 **33. Bagaimana sistem menghitung poin pelanggan?**
 
-1 poin per Rp 10.000 yang dibayar. Contoh: order total Rp 50.000 → pelanggan mendapat 5 poin. Poin ditambahkan saat status berubah ke `siap_diambil`.
+1 poin per Rp 10.000 yang dibayar. Contoh: order total Rp 50.000 → pelanggan mendapat 5 poin. Poin ditambahkan satu kali saat status berubah ke `selesai`.
 
 **34. Kapan tier pelanggan diperbarui?**
 
-Otomatis setiap kali status order berubah ke `siap_diambil`. Tier dihitung berdasarkan akumulasi total belanja lunas.
+Otomatis satu kali ketika status order berubah ke `selesai`. Tier dihitung berdasarkan akumulasi total belanja lunas.
 
 **35. Bisakah saya mengurangi poin pelanggan?**
 
@@ -234,7 +233,7 @@ Gross sales = harga × jumlah pasang (sebelum diskon). Net sales = actual yang d
 
 **46. Laporan tidak menampilkan order tertentu. Mengapa?**
 
-Laporan hanya mencakup order dengan status aktif (bukan `antri` saja). Order dengan status `diterima` ke atas sudah termasuk. Pastikan filter bulan sudah benar.
+Laporan hanya mencakup pembayaran lunas pada bulan yang dipilih dan mengecualikan order batal. Pastikan tanggal `dibayar_pada` dan filter bulan sudah benar.
 
 **47. Format apa yang tersedia untuk export laporan?**
 

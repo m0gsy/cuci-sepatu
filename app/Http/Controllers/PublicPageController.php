@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ContactMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PublicPageController extends Controller
 {
@@ -23,15 +26,37 @@ class PublicPageController extends Controller
 
     public function contactSubmit(Request $request)
     {
-        $request->validate([
-            'name'    => 'required|string|max:100',
-            'email'   => 'required|email|max:150',
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:150',
             'subject' => 'nullable|string|max:200',
             'message' => 'required|string|max:2000',
         ]);
 
-        // ponytail: no email infra on shared hosting; flash success for now
+        $message = ContactMessage::create($data);
+        if ($adminEmail = config('mail.admin_address')) {
+            try {
+                Mail::raw(
+                    "{$data['message']}\n\nDari: {$data['name']} <{$data['email']}>",
+                    fn ($mail) => $mail->to($adminEmail)
+                        ->subject('[Kontak Web] '.($data['subject'] ?: 'Pesan baru'))
+                );
+            } catch (\Throwable $exception) {
+                Log::error('Notifikasi pesan kontak gagal.', [
+                    'contact_message_id' => $message->id,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
         return back()->with('contact_success', true);
+    }
+
+    public function contactMessages()
+    {
+        $messages = ContactMessage::latest()->paginate(50);
+
+        return view('contact-messages.index', compact('messages'));
     }
 
     public function privacy()

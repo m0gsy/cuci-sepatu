@@ -22,6 +22,7 @@ class RolePermission extends Model
             ['key' => 'rewards',       'label' => 'Reward & Poin'],
             ['key' => 'stok',          'label' => 'Stok bahan'],
             ['key' => 'operasional',   'label' => 'Operasional'],
+            ['key' => 'wa_template',   'label' => 'Template WhatsApp'],
         ];
     }
 

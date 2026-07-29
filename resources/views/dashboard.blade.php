@@ -16,7 +16,7 @@
 @if($terlambat > 0)
 <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3.5 flex items-center gap-3">
     <span class="text-amber-700 font-medium text-sm">⚠ {{ $terlambat }} order melewati estimasi selesai</span>
-    <a href="{{ route('orders.index', ['status' => 'antri']) }}"
+    <a href="{{ route('orders.index', ['status' => 'diproses']) }}"
        class="text-xs text-amber-600 underline hover:text-amber-900 ml-auto">Lihat order</a>
 </div>
 @endif
@@ -105,7 +105,7 @@
         <div class="bg-white border border-gray-100 rounded-xl p-4">
             <p class="text-xs text-gray-400 mb-2">Dalam proses</p>
             <p class="text-xl font-semibold text-gray-900">{{ $stats['dalam_antrian'] }}</p>
-            <p class="text-xs text-gray-400 mt-1">antri + proses</p>
+            <p class="text-xs text-gray-400 mt-1">draft, menunggu, diproses</p>
         </div>
         <div class="bg-white border border-gray-100 rounded-xl p-4">
             <p class="text-xs text-gray-400 mb-2">Siap diambil</p>

@@ -7,16 +7,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         [x-cloak] { display: none !important; }
-        .badge-antri        { @apply bg-amber-50 text-amber-800 ring-1 ring-amber-200; }
-        .badge-proses       { @apply bg-blue-50 text-blue-800 ring-1 ring-blue-200; }
-        .badge-selesai      { @apply bg-green-50 text-green-800 ring-1 ring-green-200; }
-        .badge-diambil      { @apply bg-gray-100 text-gray-600 ring-1 ring-gray-200; }
-        .badge-diterima     { @apply bg-slate-100 text-slate-700 ring-1 ring-slate-200; }
-        .badge-inspeksi     { @apply bg-purple-50 text-purple-700 ring-1 ring-purple-200; }
-        .badge-dicuci       { @apply bg-blue-50 text-blue-700 ring-1 ring-blue-200; }
-        .badge-kering       { @apply bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200; }
-        .badge-finishing    { @apply bg-orange-50 text-orange-700 ring-1 ring-orange-200; }
-        .badge-siap_diambil { @apply bg-green-50 text-green-700 ring-1 ring-green-200; }
         .nav-active         { background: rgba(255,255,255,0.12); color: white; font-weight: 500; }
         .nav-link           { color: rgba(187,230,207,0.65); }
         .nav-link:hover     { background: rgba(255,255,255,0.08); color: white; }
@@ -190,6 +180,10 @@
                class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('karyawans.*') ? 'nav-active' : 'nav-link' }}">
                 Karyawan
             </a>
+            <a href="{{ route('contact-messages.index') }}"
+               class="flex items-center px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors {{ request()->routeIs('contact-messages.*') ? 'nav-active' : 'nav-link' }}">
+                Pesan kontak
+            </a>
             @endif
         </nav>
         <div class="px-5 py-4 shrink-0" style="border-top:1px solid rgba(255,255,255,0.08);">
@@ -232,6 +226,16 @@
         <div class="mx-6 mt-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg flex items-center justify-between" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 6000)">
             <span>{{ session('warning') }}</span>
             <button @click="show = false" class="text-amber-600 hover:text-amber-900 ml-4">✕</button>
+        </div>
+        @endif
+        @if($errors->any())
+        <div class="mx-6 mt-4 bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3 rounded-lg">
+            <p class="font-semibold mb-1">Periksa kembali data berikut:</p>
+            <ul class="list-disc pl-5 space-y-0.5">
+                @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
         @endif
         <main class="flex-1 p-6">@yield('content')</main>

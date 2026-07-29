@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // ── Pelanggan ────────────────────────────────────────────────────
-        if (!Schema::hasTable('pelanggans')) {
+        if (! Schema::hasTable('pelanggans')) {
             Schema::create('pelanggans', function (Blueprint $table) {
                 $table->id();
                 $table->string('nama');
@@ -21,22 +21,22 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasColumn('orders', 'pelanggan_id')) {
+        if (! Schema::hasColumn('orders', 'pelanggan_id')) {
             Schema::table('orders', function (Blueprint $table) {
                 $table->foreignId('pelanggan_id')->nullable()->after('user_id')
-                      ->constrained('pelanggans')->nullOnDelete();
+                    ->constrained('pelanggans')->nullOnDelete();
             });
         }
 
         // Token publik untuk cek status order
-        if (!Schema::hasColumn('orders', 'token_publik')) {
+        if (! Schema::hasColumn('orders', 'token_publik')) {
             Schema::table('orders', function (Blueprint $table) {
                 $table->string('token_publik', 32)->nullable()->unique()->after('no_order');
             });
         }
 
         // ── Stok bahan baku ──────────────────────────────────────────────
-        if (!Schema::hasTable('stoks')) {
+        if (! Schema::hasTable('stoks')) {
             Schema::create('stoks', function (Blueprint $table) {
                 $table->id();
                 $table->string('nama');
@@ -49,7 +49,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('stok_mutasis')) {
+        if (! Schema::hasTable('stok_mutasis')) {
             Schema::create('stok_mutasis', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('stok_id')->constrained('stoks')->cascadeOnDelete();
@@ -64,7 +64,7 @@ return new class extends Migration
         }
 
         // ── Biaya operasional ────────────────────────────────────────────
-        if (!Schema::hasTable('operasionals')) {
+        if (! Schema::hasTable('operasionals')) {
             Schema::create('operasionals', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -78,7 +78,7 @@ return new class extends Migration
         }
 
         // ── Program loyalitas ────────────────────────────────────────────
-        if (!Schema::hasTable('poin_histories')) {
+        if (! Schema::hasTable('poin_histories')) {
             Schema::create('poin_histories', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('pelanggan_id')->constrained('pelanggans')->cascadeOnDelete();
@@ -90,7 +90,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('rewards')) {
+        if (! Schema::hasTable('rewards')) {
             Schema::create('rewards', function (Blueprint $table) {
                 $table->id();
                 $table->string('nama');
@@ -111,11 +111,11 @@ return new class extends Migration
         Schema::dropIfExists('operasionals');
 
         if (Schema::hasColumn('orders', 'pelanggan_id')) {
-            Schema::table('orders', fn($t) => $t->dropForeign(['pelanggan_id']));
-            Schema::table('orders', fn($t) => $t->dropColumn('pelanggan_id'));
+            Schema::table('orders', fn ($t) => $t->dropForeign(['pelanggan_id']));
+            Schema::table('orders', fn ($t) => $t->dropColumn('pelanggan_id'));
         }
         if (Schema::hasColumn('orders', 'token_publik')) {
-            Schema::table('orders', fn($t) => $t->dropColumn('token_publik'));
+            Schema::table('orders', fn ($t) => $t->dropColumn('token_publik'));
         }
 
         Schema::dropIfExists('pelanggans');

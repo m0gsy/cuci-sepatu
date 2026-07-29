@@ -9,35 +9,36 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    // Status "masih dikerjakan" — lama + baru
+    // Status yang masih membutuhkan tindak lanjut staf.
     const STATUS_AKTIF = ['draft', 'menunggu_pembayaran', 'diproses', 'siap_diambil'];
-    // Status "sudah selesai/diambil"
-    const STATUS_DONE  = ['selesai'];
-    // Status yang dihitung dalam pendapatan
-    const STATUS_HITUNG = ['diproses', 'siap_diambil', 'selesai'];
 
+    // Status yang dihitung dalam pendapatan
     public function index()
     {
         if (auth()->user()->isCleaner()) {
             $aktif = Order::with(['items.layanan', 'lokasi'])
                 ->whereIn('status', self::STATUS_AKTIF)
                 ->latest()->get();
-            $terlambat = $aktif->filter(fn($o) => $o->estimasi_selesai?->isPast())->count();
+            $terlambat = $aktif->filter(fn ($o) => $o->estimasi_selesai?->isPast())->count();
+
             return view('dashboard-cleaner', compact('aktif', 'terlambat'));
         }
 
         // ── Stats hari ini ──────────────────────────────────────────────────
-        $todayOrders = Order::whereDate('created_at', today())
-            ->whereIn('status', self::STATUS_HITUNG)
+        $todayOrders = Order::with(['items', 'pembayaran'])
+            ->where('status', '!=', 'batal')
+            ->whereHas('pembayaran', fn ($query) => $query
+                ->where('status', 'selesai')
+                ->whereDate('dibayar_pada', today()))
             ->get();
 
         $stats = [
             'pendapatan_hari_ini' => $todayOrders->sum('net_sales'),
-            'hpp_hari_ini'        => $todayOrders->sum('hpp'),
-            'gross_profit_hari'   => $todayOrders->sum('gross_profit'),
-            'order_hari_ini'      => Order::whereDate('created_at', today())->count(),
-            'dalam_antrian'       => Order::whereIn('status', self::STATUS_AKTIF)->count(),
-            'siap_diambil'        => Order::where('status', 'siap_diambil')->count(),
+            'hpp_hari_ini' => $todayOrders->sum('hpp'),
+            'gross_profit_hari' => $todayOrders->sum('gross_profit'),
+            'order_hari_ini' => Order::whereDate('created_at', today())->count(),
+            'dalam_antrian' => Order::whereIn('status', self::STATUS_AKTIF)->count(),
+            'siap_diambil' => Order::where('status', 'siap_diambil')->count(),
         ];
 
         $stats['gross_margin'] = $stats['pendapatan_hari_ini'] > 0
@@ -46,15 +47,17 @@ class DashboardController extends Controller
 
         // ── Stats bulan ini ─────────────────────────────────────────────────
         $ordersBulanIni = Order::with(['items.layanan', 'pembayaran'])
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->whereIn('status', self::STATUS_HITUNG)
+            ->where('status', '!=', 'batal')
+            ->whereHas('pembayaran', fn ($query) => $query
+                ->where('status', 'selesai')
+                ->whereYear('dibayar_pada', now()->year)
+                ->whereMonth('dibayar_pada', now()->month))
             ->get();
 
         $statsBulan = [
-            'gross_sales'  => $ordersBulanIni->sum('gross_sales'),
-            'net_sales'    => $ordersBulanIni->sum('net_sales'),
-            'hpp'          => $ordersBulanIni->sum('hpp'),
+            'gross_sales' => $ordersBulanIni->sum('gross_sales'),
+            'net_sales' => $ordersBulanIni->sum('net_sales'),
+            'hpp' => $ordersBulanIni->sum('hpp'),
             'gross_profit' => $ordersBulanIni->sum('gross_profit'),
             'transactions' => $ordersBulanIni->count(),
         ];
@@ -70,7 +73,7 @@ class DashboardController extends Controller
         $orders_terbaru = Order::with(['items.layanan', 'lokasi', 'pembayaran'])->latest()->take(8)->get();
 
         $terlambat = Order::whereIn('status', self::STATUS_AKTIF)
-            ->where('estimasi_selesai', '<', today())->count();
+            ->where('estimasi_selesai', '<', now())->count();
 
         // ── Grafik harian 7 hari ────────────────────────────────────────────
         $grafikHarian = Pembayaran::where('status', 'selesai')
@@ -80,8 +83,8 @@ class DashboardController extends Controller
 
         // ── Grafik bulanan 12 bulan ─────────────────────────────────────────
         $driver = DB::getDriverName();
-        $yearExpression = $driver === 'sqlite' ? "strftime('%Y', dibayar_pada)" : "YEAR(dibayar_pada)";
-        $monthExpression = $driver === 'sqlite' ? "CAST(strftime('%m', dibayar_pada) as integer)" : "MONTH(dibayar_pada)";
+        $yearExpression = $driver === 'sqlite' ? "strftime('%Y', dibayar_pada)" : 'YEAR(dibayar_pada)';
+        $monthExpression = $driver === 'sqlite' ? "CAST(strftime('%m', dibayar_pada) as integer)" : 'MONTH(dibayar_pada)';
 
         $grafikPendapatan = Pembayaran::where('status', 'selesai')
             ->where('dibayar_pada', '>=', now()->subMonths(11)->startOfMonth())
@@ -96,23 +99,27 @@ class DashboardController extends Controller
 
         // ── Top layanan bulan ini (dari order_items untuk akurasi) ──────────
         // Group by layanan via items (multi-item aware)
-        $allItems = $ordersBulanIni->flatMap(fn($o) => $o->items);
+        $allItems = $ordersBulanIni->flatMap(fn ($o) => $o->items);
         $topItems = $allItems
             ->groupBy('layanan_id')
             ->map(function ($items) {
                 $layanan = $items->first()->layanan;
-                if (!$layanan) return null;
-                $totalHarga = $items->sum(fn($i) => $i->harga_satuan * $i->jumlah_pasang);
-                $totalHpp   = $items->sum('hpp');
-                $profit     = $totalHarga - $totalHpp;
+                if (! $layanan) {
+                    return null;
+                }
+                $totalHarga = $items->sum(fn ($i) => $i->harga_satuan * $i->jumlah_pasang);
+                $netSales = $items->sum('net_sales');
+                $totalHpp = $items->sum('hpp');
+                $profit = $netSales - $totalHpp;
+
                 return [
-                    'nama'         => $layanan->nama,
-                    'item_sold'    => $items->sum('jumlah_pasang'),
-                    'gross_sales'  => $totalHarga,
-                    'net_sales'    => $totalHarga,
+                    'nama' => $layanan->nama,
+                    'item_sold' => $items->sum('jumlah_pasang'),
+                    'gross_sales' => $totalHarga,
+                    'net_sales' => $netSales,
                     'gross_profit' => $profit,
-                    'margin'       => $totalHarga > 0
-                        ? round(($profit / $totalHarga) * 100, 1)
+                    'margin' => $netSales > 0
+                        ? round(($profit / $netSales) * 100, 1)
                         : 0,
                 ];
             })
@@ -122,8 +129,8 @@ class DashboardController extends Controller
             ->take(10);
 
         $stokMenipis = Stok::with('bahan')->get()
-            ->filter(fn($s) => $s->bahan && $s->bahan->aktif && $s->status_stok !== 'aman')
-            ->sortBy(fn($s) => $s->nama);
+            ->filter(fn ($s) => $s->bahan && $s->bahan->aktif && $s->status_stok !== 'aman')
+            ->sortBy(fn ($s) => $s->nama);
 
         return view('dashboard', compact(
             'stats', 'statsBulan', 'orders_terbaru', 'terlambat',

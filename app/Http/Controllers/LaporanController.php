@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Layanan;
+use App\Models\Order;
 use App\Models\Pembayaran;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class LaporanController extends Controller
 {
@@ -18,25 +21,22 @@ class LaporanController extends Controller
     {
         [$tahun, $bln] = explode('-', $bulan);
 
-        $rekap = Layanan::withCount(['orderItems as orders_count' => fn($q) =>
-                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
-                  ->whereYear('orders.created_at', $tahun)
-                  ->whereMonth('orders.created_at', $bln)
-                  ->where('orders.status', '!=', 'batal')
-            ])
-            ->withSum(['orderItems as total_jumlah_pasang' => fn($q) =>
-                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
-                  ->whereYear('orders.created_at', $tahun)
-                  ->whereMonth('orders.created_at', $bln)
-                  ->where('orders.status', '!=', 'batal')
-            ], 'order_items.jumlah_pasang')
-            ->withSum(['orderItems as total_pendapatan' => fn($q) =>
-                $q->join('orders', 'order_items.order_id', '=', 'orders.id')
-                  ->whereYear('orders.created_at', $tahun)
-                  ->whereMonth('orders.created_at', $bln)
-                  ->where('orders.status', '!=', 'batal')
-            ], \Illuminate\Support\Facades\DB::raw('order_items.harga_satuan * order_items.jumlah_pasang'))
+        $orders = Order::with(['items.layanan', 'pembayaran'])
+            ->where('status', '!=', 'batal')
+            ->whereHas('pembayaran', fn ($query) => $query
+                ->where('status', 'selesai')
+                ->whereYear('dibayar_pada', $tahun)
+                ->whereMonth('dibayar_pada', $bln))
             ->get();
+        $items = $orders->flatMap->items;
+        $rekap = Layanan::whereIn('id', $items->pluck('layanan_id')->unique())
+            ->get()
+            ->each(function (Layanan $layanan) use ($items) {
+                $layananItems = $items->where('layanan_id', $layanan->id);
+                $layanan->setAttribute('orders_count', $layananItems->pluck('order_id')->unique()->count());
+                $layanan->setAttribute('total_jumlah_pasang', $layananItems->sum('jumlah_pasang'));
+                $layanan->setAttribute('total_pendapatan', $layananItems->sum('net_sales'));
+            });
 
         $total_bulan = Pembayaran::whereYear('pembayarans.dibayar_pada', $tahun)
             ->whereMonth('pembayarans.dibayar_pada', $bln)
@@ -50,10 +50,12 @@ class LaporanController extends Controller
         [$tahun, $bln] = explode('-', $bulan);
         $data = $this->getRekapData($bulan);
 
-        $data['orders'] = \App\Models\Order::with(['items.layanan', 'pembayaran'])
-            ->whereYear('orders.created_at', $tahun)
-            ->whereMonth('orders.created_at', $bln)
+        $data['orders'] = Order::with(['items.layanan', 'pembayaran'])
             ->where('status', '!=', 'batal')
+            ->whereHas('pembayaran', fn ($query) => $query
+                ->where('status', 'selesai')
+                ->whereYear('dibayar_pada', $tahun)
+                ->whereMonth('dibayar_pada', $bln))
             ->latest()->get();
 
         return $data;
@@ -64,11 +66,13 @@ class LaporanController extends Controller
         $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
-        $data           = $this->getRekapData($bulan);
-        $data['orders'] = \App\Models\Order::with(['items.layanan', 'pembayaran'])
-            ->whereYear('orders.created_at', $tahun)
-            ->whereMonth('orders.created_at', $bln)
+        $data = $this->getRekapData($bulan);
+        $data['orders'] = Order::with(['items.layanan', 'pembayaran'])
             ->where('status', '!=', 'batal')
+            ->whereHas('pembayaran', fn ($query) => $query
+                ->where('status', 'selesai')
+                ->whereYear('dibayar_pada', $tahun)
+                ->whereMonth('dibayar_pada', $bln))
             ->latest()
             ->paginate(50)
             ->withQueryString();
@@ -79,36 +83,37 @@ class LaporanController extends Controller
     public function exportPdf(Request $request)
     {
         $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
-        $data  = $this->getData($bulan);
-        $pdf   = Pdf::loadView('pdf.laporan', $data)->setPaper('a4', 'portrait');
+        $data = $this->getData($bulan);
+        $pdf = Pdf::loadView('pdf.laporan', $data)->setPaper('a4', 'portrait');
+
         return $pdf->download("laporan-{$bulan}.pdf");
     }
 
     public function exportExcel(Request $request)
     {
-        $bulan     = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
-        $data      = $this->getData($bulan);
-        $rekap     = $data['rekap'];
-        $orders    = $data['orders'];
-        $namaBulan = \Carbon\Carbon::parse($bulan . '-01')->isoFormat('MMMM Y');
+        $bulan = $request->validate(['bulan' => 'nullable|date_format:Y-m'])['bulan'] ?? now()->format('Y-m');
+        $data = $this->getData($bulan);
+        $rekap = $data['rekap'];
+        $orders = $data['orders'];
+        $namaBulan = Carbon::parse($bulan.'-01')->isoFormat('MMMM Y');
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
 
         $styleHeader = [
-            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '222222']],
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '222222']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
         ];
         $styleTotal = [
-            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '333333']],
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '333333']],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
         ];
         $styleBorder = [
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E0E0E0']]],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ];
 
@@ -123,12 +128,12 @@ class LaporanController extends Controller
         $ws1->getRowDimension(1)->setRowHeight(28);
 
         $ws1->mergeCells('A2:E2');
-        $ws1->setCellValue('A2', 'Periode: ' . $namaBulan);
+        $ws1->setCellValue('A2', 'Periode: '.$namaBulan);
         $ws1->getStyle('A2')->getFont()->setSize(10)->getColor()->setRGB('888888');
         $ws1->getRowDimension(3)->setRowHeight(8);
 
         $headers1 = ['Layanan', 'Harga Satuan (Rp)', 'Jumlah Pasang', 'Total Pendapatan (Rp)', '% dari Total'];
-        $widths1   = [26, 22, 16, 26, 14];
+        $widths1 = [26, 22, 16, 26, 14];
         foreach ($headers1 as $i => $h) {
             $col = chr(65 + $i);
             $ws1->setCellValue("{$col}4", $h);
@@ -137,14 +142,14 @@ class LaporanController extends Controller
         $ws1->getStyle('A4:E4')->applyFromArray($styleHeader);
         $ws1->getRowDimension(4)->setRowHeight(22);
 
-        $dataStart   = 5;
+        $dataStart = 5;
         $totalRowIdx = $dataStart + $rekap->count();
 
         foreach ($rekap as $i => $l) {
             $row = $dataStart + $i;
-            $bg  = $i % 2 === 0 ? 'F7F7F5' : 'FFFFFF';
+            $bg = $i % 2 === 0 ? 'F7F7F5' : 'FFFFFF';
             $ws1->getRowDimension($row)->setRowHeight(20);
-            $ws1->setCellValue("A{$row}", $l->nama);
+            $ws1->setCellValueExplicit("A{$row}", $l->nama, DataType::TYPE_STRING);
             $ws1->setCellValue("B{$row}", $l->harga);
             $ws1->setCellValue("C{$row}", $l->total_jumlah_pasang ?? 0);
             $ws1->setCellValue("D{$row}", $l->total_pendapatan ?? 0);
@@ -162,8 +167,8 @@ class LaporanController extends Controller
 
         $ws1->getRowDimension($totalRowIdx)->setRowHeight(22);
         $ws1->setCellValue("A{$totalRowIdx}", 'TOTAL');
-        $ws1->setCellValue("C{$totalRowIdx}", "=SUM(C{$dataStart}:C" . ($totalRowIdx - 1) . ")");
-        $ws1->setCellValue("D{$totalRowIdx}", "=SUM(D{$dataStart}:D" . ($totalRowIdx - 1) . ")");
+        $ws1->setCellValue("C{$totalRowIdx}", "=SUM(C{$dataStart}:C".($totalRowIdx - 1).')');
+        $ws1->setCellValue("D{$totalRowIdx}", "=SUM(D{$dataStart}:D".($totalRowIdx - 1).')');
         $ws1->setCellValue("E{$totalRowIdx}", '100%');
         $ws1->getStyle("A{$totalRowIdx}:E{$totalRowIdx}")->applyFromArray($styleTotal);
         $ws1->getStyle("C{$totalRowIdx}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -176,12 +181,12 @@ class LaporanController extends Controller
         $ws2->freezePane('A3');
 
         $ws2->mergeCells('A1:G1');
-        $ws2->setCellValue('A1', 'DETAIL ORDER — ' . strtoupper($namaBulan));
+        $ws2->setCellValue('A1', 'DETAIL ORDER — '.strtoupper($namaBulan));
         $ws2->getStyle('A1')->getFont()->setBold(true)->setSize(13);
         $ws2->getRowDimension(1)->setRowHeight(24);
 
         $headers2 = ['No. Order', 'Tanggal', 'Pelanggan', 'Layanan', 'Jml Pasang', 'Total (Rp)', 'Status'];
-        $widths2   = [20, 13, 24, 16, 12, 20, 12];
+        $widths2 = [20, 13, 24, 16, 12, 20, 12];
         foreach ($headers2 as $i => $h) {
             $col = chr(65 + $i);
             $ws2->setCellValue("{$col}2", $h);
@@ -191,25 +196,25 @@ class LaporanController extends Controller
         $ws2->getRowDimension(2)->setRowHeight(22);
 
         $statusColors = [
-            'draft'               => ['bg' => 'F3F4F6', 'txt' => '475569'],
+            'draft' => ['bg' => 'F3F4F6', 'txt' => '475569'],
             'menunggu_pembayaran' => ['bg' => 'FEF3C7', 'txt' => '92400E'],
-            'diproses'            => ['bg' => 'DBEAFE', 'txt' => '1E40AF'],
-            'siap_diambil'        => ['bg' => 'D1FAE5', 'txt' => '065F46'],
-            'selesai'             => ['bg' => 'E0F2FE', 'txt' => '0369A1'],
-            'batal'               => ['bg' => 'FEE2E2', 'txt' => 'B91C1C'],
+            'diproses' => ['bg' => 'DBEAFE', 'txt' => '1E40AF'],
+            'siap_diambil' => ['bg' => 'D1FAE5', 'txt' => '065F46'],
+            'selesai' => ['bg' => 'E0F2FE', 'txt' => '0369A1'],
+            'batal' => ['bg' => 'FEE2E2', 'txt' => 'B91C1C'],
         ];
 
         foreach ($orders as $i => $o) {
             $row = $i + 3;
-            $bg  = $i % 2 === 0 ? 'F7F7F5' : 'FFFFFF';
+            $bg = $i % 2 === 0 ? 'F7F7F5' : 'FFFFFF';
             $ws2->getRowDimension($row)->setRowHeight(20);
             $ws2->setCellValue("A{$row}", $o->no_order);
             $ws2->setCellValue("B{$row}", $o->created_at->format('d/m/Y'));
-            $ws2->setCellValue("C{$row}", $o->nama_pelanggan);
+            $ws2->setCellValueExplicit("C{$row}", $o->nama_pelanggan, DataType::TYPE_STRING);
             $layananNama = $o->items->isNotEmpty()
-                ? $o->items->map(fn($i) => $i->layanan->nama ?? '—')->join(', ')
+                ? $o->items->map(fn ($i) => $i->layanan->nama ?? '—')->join(', ')
                 : ($o->layanan->nama ?? '—');
-            $ws2->setCellValue("D{$row}", $layananNama);
+            $ws2->setCellValueExplicit("D{$row}", $layananNama, DataType::TYPE_STRING);
             $ws2->setCellValue("E{$row}", $o->jumlah_pasang);
             $ws2->setCellValue("F{$row}", $o->pembayaran?->total ?? 0);
             $ws2->setCellValue("G{$row}", ucfirst($o->status));
@@ -229,21 +234,21 @@ class LaporanController extends Controller
         $totalRow2 = $orders->count() + 3;
         $ws2->getRowDimension($totalRow2)->setRowHeight(22);
         $ws2->setCellValue("A{$totalRow2}", 'TOTAL');
-        $ws2->setCellValue("E{$totalRow2}", "=SUM(E3:E" . ($totalRow2 - 1) . ")");
-        $ws2->setCellValue("F{$totalRow2}", "=SUM(F3:F" . ($totalRow2 - 1) . ")");
+        $ws2->setCellValue("E{$totalRow2}", '=SUM(E3:E'.($totalRow2 - 1).')');
+        $ws2->setCellValue("F{$totalRow2}", '=SUM(F3:F'.($totalRow2 - 1).')');
         $ws2->getStyle("A{$totalRow2}:G{$totalRow2}")->applyFromArray($styleTotal);
         $ws2->getStyle("E{$totalRow2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $ws2->getStyle("F{$totalRow2}")->getNumberFormat()->setFormatCode('#,##0');
 
         $spreadsheet->setActiveSheetIndex(0);
         $filename = "laporan-{$bulan}.xlsx";
-        $writer   = new Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $filename, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

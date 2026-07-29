@@ -5,6 +5,7 @@
 <div class="max-w-4xl">
 <form method="POST" action="{{ route('orders.store') }}" x-data="orderForm()" @submit="submitForm($event)">
 @csrf
+<input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Form Kiri: Pelanggan & Items -->
@@ -13,7 +14,7 @@
         <div class="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Data pelanggan</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div x-data="pelangganAuto()" class="relative" @set-nama-pelanggan.window="nama = $event.detail">
+                <div x-data="pelangganAuto(@js(old('nama_pelanggan', '')))" class="relative" @set-nama-pelanggan.window="nama = $event.detail">
                     <label class="block text-xs text-gray-500 mb-1.5">Nama pelanggan <span class="text-red-400">*</span></label>
                     <input type="text" name="nama_pelanggan"
                            x-model="nama"
@@ -42,7 +43,7 @@
                         </template>
                     </div>
                 </div>
-                <div x-data="phoneInput()" @set-no-hp.window="setNoHp($event.detail)">
+                <div x-data="phoneInput(@js(old('no_hp', '')))" @set-no-hp.window="setNoHp($event.detail)">
                     <label class="block text-xs text-gray-500 mb-1.5">No. HP <span class="text-red-400">*</span></label>
                     <input type="text" name="no_hp"
                            x-model="noHp"
@@ -78,7 +79,7 @@
                         @change="pilihLokasi($event.target.value)">
                     <option value="">-- Pilih lokasi (opsional) --</option>
                     @foreach($lokasis as $lok)
-                    <option value="{{ $lok->id }}">
+                    <option value="{{ $lok->id }}" @selected((string) old('lokasi_id') === (string) $lok->id)>
                         {{ $lok->kode }} — {{ $lok->nama }}
                         @if($lok->harga_custom)
                             ({{ $lok->harga_tambahan_format }})
@@ -95,6 +96,7 @@
             <div x-show="lokasi_id" class="mb-4">
                 <label class="block text-xs text-gray-500 mb-1.5">Catatan lokasi</label>
                 <input type="text" name="catatan_lokasi"
+                       value="{{ old('catatan_lokasi') }}"
                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                        placeholder="Misal: baris ke-2 dari kiri">
             </div>
@@ -182,7 +184,7 @@
             <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Catatan tambahan</h2>
             <textarea name="catatan" rows="3"
                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
-                      placeholder="Masukkan catatan order (opsional)..."></textarea>
+                      placeholder="Masukkan catatan order (opsional)...">{{ old('catatan') }}</textarea>
         </div>
     </div>
 
@@ -196,29 +198,29 @@
                     <label class="block text-xs text-gray-500 mb-1">Estimasi selesai <span class="text-red-400">*</span></label>
                     <input type="datetime-local" name="estimasi_selesai"
                            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-                           :value="estimasiTanggal" required>
+                           :value="@js(old('estimasi_selesai')) || estimasiTanggal" required>
                 </div>
 
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Metode bayar <span class="text-red-400">*</span></label>
                     <select name="metode_bayar"
                             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand" required>
-                        <option value="tempo">Bayar saat ambil</option>
-                        <option value="cash">Cash (langsung)</option>
-                        <option value="qris">QRIS</option>
-                        <option value="transfer">Transfer (DP)</option>
-                        <option value="lunas">Sudah lunas</option>
+                        <option value="tempo" @selected(old('metode_bayar', 'tempo') === 'tempo')>Bayar saat ambil</option>
+                        <option value="cash" @selected(old('metode_bayar') === 'cash')>Cash (langsung)</option>
+                        <option value="qris" @selected(old('metode_bayar') === 'qris')>QRIS</option>
+                        <option value="transfer" @selected(old('metode_bayar') === 'transfer')>Transfer (DP)</option>
+                        <option value="lunas" @selected(old('metode_bayar') === 'lunas')>Sudah lunas</option>
                     </select>
                 </div>
 
                 <!-- Voucher -->
-                <div x-data="voucherForm()">
+                <div x-data="voucherForm(@js(old('voucher_kode', '')))">
                     <label class="block text-xs text-gray-500 mb-1">Kode voucher (opsional)</label>
                     <div class="flex gap-2">
                         <input type="text" x-model="kode" @input="reset()" placeholder="DISKON10"
                                style="text-transform:uppercase"
                                class="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand">
-                        <button type="button" @click="cek($parent.subtotal)"
+                        <button type="button" @click="cek(subtotal)"
                                 class="px-3 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700">
                             Cek
                         </button>
@@ -238,11 +240,11 @@
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="tukar_poin" value="1"
                                    x-model="aktif"
-                                   @change="$dispatch('poin-toggled', { diskon: aktif ? Math.min(nilaiRupiah, $root.subtotal - $root.voucherDiskon) : 0 })"
+                                   @change="$dispatch('poin-toggled', { diskon: aktif ? Math.min(nilaiRupiah, Math.max(0, subtotal - voucherDiskon)) : 0 })"
                                    class="rounded border-gray-300 text-brand focus:ring-brand">
                             <span class="text-xs text-gray-700">Gunakan semua poin sebagai diskon</span>
                             <span class="text-xs font-semibold text-green-700" x-show="aktif"
-                                  x-text="'-Rp ' + Math.min(nilaiRupiah, $root.subtotal - $root.voucherDiskon).toLocaleString('id-ID')"></span>
+                                  x-text="'-Rp ' + Math.min(nilaiRupiah, Math.max(0, subtotal - voucherDiskon)).toLocaleString('id-ID')"></span>
                         </label>
                     </template>
                     <template x-if="poinTersedia === 0 && !loaded">
@@ -293,8 +295,8 @@
 
             <div class="flex gap-2 pt-2">
                 <a href="{{ route('orders.index') }}" class="flex-1 py-2 text-center text-xs text-gray-500 hover:text-gray-700 border border-gray-100 rounded-lg">Batal</a>
-                <button type="submit" class="flex-1 py-2 text-xs bg-brand text-white font-medium rounded-lg hover:bg-brand-hover">
-                    Simpan Order
+                <button type="submit" :disabled="submitting" class="flex-1 py-2 text-xs bg-brand text-white font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50">
+                    <span x-text="submitting ? 'Menyimpan...' : 'Simpan Order'"></span>
                 </button>
             </div>
         </div>
@@ -304,11 +306,21 @@
 </form>
 </div>
 
+@php
+    $initialItems = old('items', [[
+        'layanan_id' => '',
+        'jenis_barang_id' => '',
+        'jumlah_pasang' => 1,
+        'merek' => '',
+        'warna' => '',
+        'kondisi' => '',
+    ]]);
+@endphp
+
 <script>
 function orderForm() {
     return {
-        items: [
-            {
+        items: {{ Illuminate\Support\Js::from($initialItems) }}.map(item => ({
                 layanan_id: '',
                 jenis_barang_id: '',
                 jumlah_pasang: 1,
@@ -318,29 +330,39 @@ function orderForm() {
                 hargaSatuan: 0,
                 hargaLayananAsli: 0,
                 hppSatuan: 0,
-            }
-        ],
+                ...item,
+            })),
         layananMap: {
             @foreach($layanans as $l)
                 "{{ $l->id }}": {
                     harga: {{ $l->harga }},
                     hpp: {{ $l->total_hpp }},
-                    hari: {{ $l->estimasi_hari }}
+                    menit: {{ match(strtolower($l->estimasi_satuan)) {
+                        'jam' => $l->estimasi_nilai * 60,
+                        'minggu' => $l->estimasi_nilai * 10080,
+                        default => $l->estimasi_nilai * 1440,
+                    } }}
                 },
             @endforeach
         },
-        lokasi_id: '',
+        lokasi_id: @js((string) old('lokasi_id', '')),
         hargaTambahan: 0,
         hargaCustom: false,
         lokasiLabel: '',
         hargaPerLayanan: {},
         voucherDiskon: 0,
         poinDiskon: 0,
+        submitting: false,
 
         init() {
             this.$el.addEventListener('poin-toggled', (e) => {
                 this.poinDiskon = e.detail.diskon || 0;
             });
+            this.$el.addEventListener('voucher-changed', (e) => {
+                this.voucherDiskon = e.detail.diskon || 0;
+                this.poinDiskon = 0;
+            });
+            this.items.forEach(item => this.hitungHargaItem(item));
         },
 
         addItem() {
@@ -432,16 +454,15 @@ function orderForm() {
 
         get estimasiTanggal() {
             // Dapatkan jumlah hari maksimum dari item yang dipilih
-            let maxHari = 2;
+            let maxMenit = 2 * 1440;
             this.items.forEach(item => {
                 if (item.layanan_id && this.layananMap[item.layanan_id]) {
-                    maxHari = Math.max(maxHari, this.layananMap[item.layanan_id].hari);
+                    maxMenit = Math.max(maxMenit, this.layananMap[item.layanan_id].menit);
                 }
             });
 
             const d = new Date();
-            d.setDate(d.getDate() + maxHari);
-            d.setHours(17, 0, 0, 0); // Est. jam 5 sore
+            d.setMinutes(d.getMinutes() + maxMenit);
 
             // Format to Y-m-d\TH:i for datetime-local
             const y = d.getFullYear();
@@ -454,7 +475,7 @@ function orderForm() {
         },
 
         submitForm(e) {
-            // Tambahkan validasi kustom jika diperlukan
+            this.submitting = true;
         },
 
         formatRupiah(n) {
@@ -466,9 +487,9 @@ function orderForm() {
     };
 }
 
-function pelangganAuto() {
+function pelangganAuto(initialName = '') {
     return {
-        nama: '',
+        nama: initialName,
         saran: [],
         terbuka: false,
         fokus: -1,
@@ -510,19 +531,23 @@ function pelangganAuto() {
     }
 }
 
-function voucherForm() {
+function voucherForm(initialCode = '') {
     return {
-        kode: '',
-        valid: false,
+        kode: initialCode,
+        valid: initialCode !== '',
         pesan: '',
-        reset() { this.valid = false; this.pesan = ''; this.$parent.voucherDiskon = 0; },
+        reset() {
+            this.valid = false;
+            this.pesan = '';
+            this.$dispatch('voucher-changed', { diskon: 0 });
+        },
         async cek(totalHarga = 0) {
             if (!this.kode) return;
             const res = await fetch(`/vouchers/cek?kode=${this.kode.toUpperCase()}&total=${totalHarga}`);
             const data  = await res.json();
             this.valid  = data.valid;
             this.pesan  = data.valid ? data.keterangan : data.pesan;
-            this.$parent.voucherDiskon = data.valid ? (data.diskon ?? 0) : 0;
+            this.$dispatch('voucher-changed', { diskon: data.valid ? (data.diskon ?? 0) : 0 });
         }
     }
 }
@@ -543,9 +568,9 @@ function poinForm() {
     }
 }
 
-function phoneInput() {
+function phoneInput(initialPhone = '') {
     return {
-        noHp: '',
+        noHp: initialPhone,
         pelangganDitemukan: false,
         namaDitemukan: '',
         poinDitemukan: 0,

@@ -38,12 +38,12 @@ Dashboard menampilkan ringkasan bisnis secara real-time. Tampilan berbeda berdas
 
 | Kartu | Keterangan |
 |-------|-----------|
-| Pendapatan Hari Ini | Total pembayaran berstatus `lunas` yang `dibayar_pada` hari ini |
+| Pendapatan Hari Ini | Total pembayaran berstatus `selesai` yang `dibayar_pada` hari ini |
 | HPP Hari Ini | Total HPP order yang dibuat hari ini (status aktif) |
 | Gross Profit Hari Ini | Pendapatan – HPP hari ini |
 | Gross Margin | `(Gross Profit / Pendapatan) × 100%` |
 | Order Hari Ini | Jumlah order dibuat hari ini |
-| Dalam Antrian | Order dengan status aktif (diterima/inspeksi/dicuci/kering/finishing) |
+| Dalam Proses | Order berstatus draft, menunggu pembayaran, diproses, atau siap diambil |
 | Siap Diambil | Order berstatus `siap_diambil` |
 
 #### Stats Bulan Ini
@@ -84,7 +84,7 @@ Jumlah order aktif yang sudah melewati tanggal `estimasi_selesai`.
 
 ### Dashboard Cleaner
 
-Cleaner melihat tampilan berbeda: **daftar semua order aktif** (status diterima/inspeksi/dicuci/kering/finishing) beserta jumlah order terlambat. Tidak ada data finansial.
+Cleaner melihat tampilan berbeda: **daftar semua order aktif** (draft, menunggu pembayaran, diproses, siap diambil) beserta jumlah order terlambat. Tidak ada data finansial.
 
 ---
 
@@ -118,7 +118,7 @@ Klik nama profil → **Logout** (atau klik tombol Logout jika tersedia di naviga
 ### Keamanan Sesi
 
 - Akun yang di-nonaktifkan oleh Owner tidak bisa login.
-- Semua halaman admin memerlukan autentikasi dan verifikasi email.
+- Semua halaman staf memerlukan autentikasi dan akun aktif.
 
 ---
 
@@ -175,15 +175,15 @@ Halaman `/orders` menampilkan semua order dengan paginasi 15 per halaman.
 2. Total = harga_satuan × jumlah_pasang.
 3. Jika kode voucher valid: diskon diterapkan, total dikurangi diskon.
 4. Pelanggan dicari berdasarkan `no_hp`. Jika tidak ditemukan, data pelanggan baru dibuat otomatis.
-5. Nomor order di-generate otomatis: format `ORD-YYYYMMDD-XXXX` (urutan hari ini, lock transaksi).
+5. Nomor order di-generate otomatis: format `ORD-YYYYMMDD-XXXXXX` dengan suffix acak dan unique constraint.
 6. Token publik 32 karakter di-generate untuk tracking publik.
-7. Status awal: `diterima`.
+7. Status awal: `draft`.
 8. Record pembayaran dibuat. Status `lunas` jika metode bayar = lunas/cash/qris.
 9. Notifikasi WhatsApp **Order Masuk** dikirim ke nomor pelanggan (async via queue).
 
 **Catatan metode bayar:**
 - `lunas`, `cash`, `qris` → pembayaran langsung ditandai lunas
-- `tempo`, `transfer` → status pembayaran `belum`, tandai lunas manual nanti
+- `tempo`, `transfer` → status pembayaran `belum_selesai`, tandai lunas manual nanti
 
 ### 3.3 Detail Order
 
@@ -207,29 +207,30 @@ Halaman detail menampilkan semua informasi order: data sepatu, pembayaran, statu
 
 **URL:** `PATCH /orders/{id}/status`
 
-Status order mengikuti alur 7 tahap:
+Status order mengikuti alur maju berikut:
 
 ```
-diterima → inspeksi → dicuci → kering → finishing → siap_diambil → selesai
+draft → menunggu_pembayaran → diproses → siap_diambil → selesai
 ```
 
 **Trigger otomatis saat update status:**
 
 | Status | Aksi Otomatis |
 |--------|--------------|
-| `dicuci` | Kirim WA notifikasi "Mulai Dicuci" ke pelanggan |
-| `siap_diambil` | Kirim WA notifikasi "Order Selesai", tambah poin ke pelanggan, set `selesai_pada` |
-| `selesai` | Tandai pembayaran lunas secara otomatis (jika belum lunas) |
+| `diproses` | Kirim WA notifikasi "Mulai Diproses" ke pelanggan |
+| `siap_diambil` | Kirim WA "Order Selesai", tampilkan estimasi poin, set `selesai_pada` |
+| `selesai` | Tandai pembayaran lunas dan tambahkan poin satu kali |
+| `batal` | Kembalikan stok, poin yang ditukar, dan kuota voucher secara idempoten |
 
 **Aturan bisnis:**
-- Order yang sudah berstatus `siap_diambil`, `selesai`, atau `diambil` (legacy) tidak bisa diedit.
-- Status bisa diubah ke status apapun (tidak harus urut), namun trigger di atas hanya berlaku untuk status spesifik.
+- Order berstatus `siap_diambil`, `selesai`, atau `batal` tidak bisa diedit.
+- Status hanya dapat bergerak maju. Pembatalan hanya tersedia dari `draft` atau `menunggu_pembayaran`.
 
 ### 3.5 Tandai Lunas
 
 **URL:** `PATCH /orders/{id}/tandai-lunas`
 
-Mengubah status pembayaran dari `belum` menjadi `lunas` dan mengisi `dibayar_pada` dengan waktu sekarang. Jika pembayaran sudah lunas, aksi ini mengembalikan pesan error.
+Mengubah status pembayaran dari `belum_selesai` menjadi `selesai` dan mengisi `dibayar_pada` dengan waktu sekarang. Jika pembayaran sudah lunas, aksi ini mengembalikan pesan error.
 
 ### 3.6 Cetak Nota
 
@@ -254,7 +255,7 @@ Mengirim pesan invoice (template `invoice`) beserta link status publik ke nomor 
 
 **URL:** `GET/PUT /orders/{id}/edit`
 
-Tidak bisa mengedit order yang sudah selesai (`siap_diambil`, `selesai`, `diambil`). Field yang dapat diedit sama dengan form create, kecuali voucher (tidak bisa ubah voucher setelah order dibuat).
+Tidak bisa mengedit order berstatus `siap_diambil`, `selesai`, atau `batal`. Field yang dapat diedit sama dengan form create, kecuali voucher (tidak bisa ubah voucher setelah order dibuat).
 
 Saat layanan atau jumlah pasang berubah, HPP di-recalculate otomatis.
 
@@ -310,12 +311,12 @@ Tier dihitung berdasarkan **total belanja lunas** sepanjang waktu:
 | Gold | ≥ Rp 2.000.000 |
 | Platinum | ≥ Rp 5.000.000 |
 
-Tier diperbarui otomatis setiap kali order mencapai status `siap_diambil`.
+Tier diperbarui otomatis ketika order mencapai status `selesai`.
 
 ### 4.6 Sistem Poin Pelanggan
 
 - **Earn:** 1 poin per Rp 10.000 yang dibayar (dihitung dari `pembayaran.total`).
-- Poin ditambahkan otomatis saat status berubah ke `siap_diambil`.
+- Poin ditambahkan otomatis satu kali saat status berubah ke `selesai`.
 - Poin bisa ditukar dengan reward yang tersedia.
 - Riwayat poin dicatat di tabel `poin_histories`.
 
@@ -736,7 +737,7 @@ Menampilkan semua template pesan WhatsApp yang tersedia.
 | Kode | Nama | Trigger |
 |------|------|---------|
 | `order_masuk` | Order Masuk | Saat order baru dibuat |
-| `mulai_dicuci` | Mulai Dicuci | Saat status berubah ke `dicuci` |
+| `mulai_dicuci` | Mulai Diproses | Saat status berubah ke `diproses` |
 | `order_selesai` | Order Selesai | Saat status berubah ke `siap_diambil` |
 | `invoice` | Invoice | Saat klik "Kirim Invoice WA" |
 
@@ -771,15 +772,15 @@ Tombol **Reset** mengembalikan template ke teks default bawaan sistem.
 
 ### 13.4 Konfigurasi WhatsApp
 
-WhatsApp menggunakan layanan **Wablas**. Konfigurasi di file `.env`:
+WhatsApp menggunakan layanan **Twilio**. Konfigurasi di file `.env`:
 
 ```
-WABLAS_TOKEN=isi_token_dari_wablas
-WABLAS_URL=https://smg.wablas.com
-WABLAS_SECRET=isi_jika_ada
+TWILIO_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=isi_token_dari_twilio
+TWILIO_WHATSAPP_FROM=+14155238886
 ```
 
-Jika `WABLAS_TOKEN` kosong, pengiriman WA dilewati dan peringatan dicatat di log.
+Jika kredensial Twilio kosong, pengiriman WA dilewati dan peringatan dicatat di log.
 
 ---
 
@@ -801,7 +802,7 @@ Review diberikan melalui halaman publik (bukan login):
 
 1. Pelanggan menerima link status order via WhatsApp: `https://domain.com/status/{token_publik}`.
 2. Pelanggan membuka link dan melihat status order.
-3. Jika order sudah selesai (`siap_diambil`/`selesai`/`diambil`), form rating muncul.
+3. Jika order sudah `siap_diambil` atau `selesai`, form rating muncul.
 4. Pelanggan memilih rating 1–5 bintang dan mengisi ulasan opsional.
 5. Review hanya bisa diberikan **1 kali** per order.
 

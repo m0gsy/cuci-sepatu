@@ -60,15 +60,16 @@ Pelanggan tidak menerima WA setelah order dibuat atau status diperbarui.
 **Langkah 1: Cek konfigurasi**
 Buka file `.env` dan pastikan:
 ```
-WABLAS_TOKEN=isi_token_anda_di_sini
-WABLAS_URL=https://smg.wablas.com
+TWILIO_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=isi_token_anda
+TWILIO_WHATSAPP_FROM=+14155238886
 ```
-Jika `WABLAS_TOKEN` kosong, WA tidak akan dikirim dan peringatan dicatat di log.
+Jika kredensial Twilio kosong, WA tidak dikirim dan peringatan dicatat di log.
 
 **Langkah 2: Cek log**
 Buka `storage/logs/laravel.log` dan cari baris dengan kata "WA":
 ```
-WA: WABLAS_TOKEN belum diisi di .env
+WA: kredensial Twilio belum lengkap
 WA gagal: {"status":false, ...}
 KirimWaJob gagal permanen ke 0812xxx
 ```
@@ -89,9 +90,9 @@ Buka detail order → klik **Kirim Ulang WA**.
 
 | Error di Log | Solusi |
 |-------------|--------|
-| `WABLAS_TOKEN belum diisi` | Isi `WABLAS_TOKEN` di `.env`, restart aplikasi |
-| `WA gagal: {"status":false}` | Periksa saldo/kuota akun Wablas, atau nomor HP tidak aktif |
-| `HTTP timeout` | Server Wablas timeout — coba lagi nanti atau periksa status Wablas |
+| Kredensial Twilio belum lengkap | Isi ketiga variabel `TWILIO_*`, restart queue worker |
+| Respons Twilio gagal | Periksa saldo/kuota akun Twilio, sender WhatsApp, dan nomor tujuan |
+| `HTTP timeout` | API Twilio timeout — coba lagi nanti atau periksa status Twilio |
 | `KirimWaJob gagal permanen` | Semua 3 percobaan gagal — cek log detail, kirim ulang manual |
 
 ---
@@ -106,7 +107,7 @@ Tombol update status tidak muncul atau tidak berfungsi.
 | Penyebab | Solusi |
 |----------|--------|
 | Tidak punya permission `orders.manage` | Hubungi Owner untuk menambahkan permission |
-| Order sudah berstatus selesai | Order `siap_diambil`/`selesai`/`diambil` tidak bisa diubah (by design) |
+| Order sudah berstatus terminal | Status hanya dapat bergerak maju; `selesai` dan `batal` tidak dapat diubah |
 | Masalah JavaScript | Bersihkan cache browser, atau coba browser lain |
 
 ---
@@ -143,7 +144,7 @@ Order selesai tapi poin pelanggan tidak bertambah.
 
 | Penyebab | Solusi |
 |----------|--------|
-| Status belum mencapai `siap_diambil` | Poin hanya ditambah saat status = `siap_diambil` |
+| Status belum mencapai `selesai` | Poin hanya ditambah satu kali saat status = `selesai` |
 | Pelanggan tidak terhubung ke order | Cek apakah field `pelanggan_id` di order terisi |
 | Poin order = 0 | Terjadi jika `pembayaran.total = 0` (order gratis, atau data pembayaran null) |
 

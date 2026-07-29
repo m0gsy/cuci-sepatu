@@ -104,7 +104,7 @@
 
             <article>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">6. Integrasi WhatsApp Business API</h2>
-                <p class="text-sm mb-3">Fitur notifikasi WhatsApp menggunakan WhatsApp Business API (Meta Platforms). Dengan menggunakan fitur ini, Anda menyatakan bahwa:</p>
+                <p class="text-sm mb-3">Fitur notifikasi menggunakan Twilio WhatsApp API. Dengan menggunakan fitur ini, Anda menyatakan bahwa:</p>
                 <ul class="list-disc list-inside space-y-1 text-sm pl-2">
                     <li>Anda telah mendapatkan persetujuan dari penerima pesan untuk menerima komunikasi bisnis</li>
                     <li>Pesan yang dikirim bersifat transaksional dan relevan dengan layanan yang dipesan pelanggan</li>

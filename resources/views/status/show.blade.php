@@ -38,13 +38,6 @@
         {{-- Header status --}}
         @php
             $normalizedStatus = $order->status;
-            if (in_array($normalizedStatus, ['antri'])) {
-                $normalizedStatus = 'menunggu_pembayaran';
-            } elseif (in_array($normalizedStatus, ['proses', 'diterima', 'inspeksi', 'dicuci', 'kering', 'finishing'])) {
-                $normalizedStatus = 'diproses';
-            } elseif (in_array($normalizedStatus, ['diambil'])) {
-                $normalizedStatus = 'selesai';
-            }
 
             $statusConfig = [
                 'draft'               => ['bg' => 'bg-slate-50',   'text' => 'text-slate-800',  'label' => 'Draft',            'desc' => 'Order Anda masih berupa draft awal'],
@@ -56,7 +49,7 @@
             ];
 
             if ($order->poin > 0) {
-                $statusConfig['siap_diambil']['desc'] .= ' (Anda mendapatkan ' . $order->poin . ' poin!)';
+                $statusConfig['siap_diambil']['desc'] .= ' (Estimasi ' . $order->poin . ' poin akan ditambahkan setelah order selesai.)';
                 $statusConfig['selesai']['desc'] .= ' (Anda mendapatkan ' . $order->poin . ' poin!)';
             }
 
@@ -157,10 +150,20 @@
         </div>
 
         {{-- Form review (hanya jika order selesai & belum review) --}}
-        @if(in_array($order->status, ['siap_diambil', 'selesai', 'diambil']) && !$order->review)
+        @if($order->status === 'selesai' && !$order->review)
         <div class="px-6 pb-5 border-t border-gray-100 pt-4">
+            @if($errors->any())
+            <div class="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                {{ $errors->first() }}
+            </div>
+            @endif
+            @if(session('success'))
+            <div class="mb-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-700">
+                {{ session('success') }}
+            </div>
+            @endif
             <p class="text-xs font-semibold text-gray-700 mb-3">Berikan ulasan Anda</p>
-            <form method="POST" action="{{ route('orders.review.store', $order) }}"
+            <form method="POST" action="{{ route('orders.review.store', ['order' => $order->token_publik]) }}"
                   x-data="{ rating: 0 }">
                 @csrf
                 <div class="flex gap-1 mb-3">

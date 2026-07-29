@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Http\Middleware\NormalizePhoneNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use App\Http\Middleware\NormalizePhoneNumber;
 
 class Pelanggan extends Model
 {
@@ -14,11 +14,14 @@ class Pelanggan extends Model
     // Tiers: reguler < silver < gold < platinum
     const TIER_THRESHOLDS = [
         'platinum' => 5000000,
-        'gold'     => 2000000,
-        'silver'   => 500000,
+        'gold' => 2000000,
+        'silver' => 500000,
     ];
 
-    public function reviews() { return $this->hasMany(Review::class); }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 
     public function orders()
     {
@@ -45,18 +48,22 @@ class Pelanggan extends Model
 
     public function layananFavorit(): ?string
     {
-        $fav = $this->orders()
-            ->select('layanan_id', DB::raw('count(*) as total'))
-            ->groupBy('layanan_id')
+        $fav = OrderItem::query()
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('layanans', 'order_items.layanan_id', '=', 'layanans.id')
+            ->where('orders.pelanggan_id', $this->id)
+            ->where('orders.status', '!=', 'batal')
+            ->select('layanans.nama', DB::raw('SUM(order_items.jumlah_pasang) as total'))
+            ->groupBy('layanans.id', 'layanans.nama')
             ->orderByDesc('total')
-            ->with('layanan')
             ->first();
-        return $fav?->layanan?->nama;
+
+        return $fav?->nama;
     }
 
     public function getWaLinkAttribute(): string
     {
-        return 'https://wa.me/' . NormalizePhoneNumber::normalize($this->no_hp);
+        return 'https://wa.me/'.NormalizePhoneNumber::normalize($this->no_hp);
     }
 
     /** Formatted phone for display: 628xxx → 0812-3456-7890 */
@@ -72,16 +79,33 @@ class Pelanggan extends Model
     }
 
     // Tambah poin setelah order
-    public function tambahPoin(int $poin, string $keterangan, ?int $orderId = null): void
-    {
-        DB::transaction(function () use ($poin, $keterangan, $orderId) {
-            $this->increment('poin', $poin);
-            $this->poinHistories()->create([
-                'tipe'       => 'tambah',
-                'poin'       => $poin,
+    public function tambahPoin(
+        int $poin,
+        string $keterangan,
+        ?int $orderId = null,
+        ?string $eventKey = null
+    ): bool {
+        if ($poin <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($poin, $keterangan, $orderId, $eventKey) {
+            $pelanggan = static::lockForUpdate()->findOrFail($this->id);
+            if ($eventKey && PoinHistory::where('event_key', $eventKey)->exists()) {
+                return false;
+            }
+
+            $pelanggan->increment('poin', $poin);
+            $pelanggan->poinHistories()->create([
+                'tipe' => 'tambah',
+                'poin' => $poin,
                 'keterangan' => $keterangan,
-                'order_id'   => $orderId,
+                'order_id' => $orderId,
+                'event_key' => $eventKey,
             ]);
+            $this->refresh();
+
+            return true;
         });
     }
 
@@ -89,8 +113,11 @@ class Pelanggan extends Model
     {
         $total = $this->total_belanja_periode;
         foreach (self::TIER_THRESHOLDS as $tier => $min) {
-            if ($total >= $min) return $tier;
+            if ($total >= $min) {
+                return $tier;
+            }
         }
+
         return 'reguler';
     }
 
@@ -102,28 +129,45 @@ class Pelanggan extends Model
 
     public function getTierBadgeAttribute(): string
     {
-        return match($this->tier ?? 'reguler') {
+        return match ($this->tier ?? 'reguler') {
             'platinum' => 'bg-purple-50 text-purple-800 ring-1 ring-purple-300',
-            'gold'     => 'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-300',
-            'silver'   => 'bg-slate-100 text-slate-700 ring-1 ring-slate-300',
-            default    => 'bg-gray-50 text-gray-600 ring-1 ring-gray-200',
+            'gold' => 'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-300',
+            'silver' => 'bg-slate-100 text-slate-700 ring-1 ring-slate-300',
+            default => 'bg-gray-50 text-gray-600 ring-1 ring-gray-200',
         };
     }
 
     // Tukar poin reward
-    public function tukarPoin(int $poin, string $keterangan): bool
-    {
-        if ($this->poin < $poin) return false;
-        
-        DB::transaction(function () use ($poin, $keterangan) {
-            $this->decrement('poin', $poin);
-            $this->poinHistories()->create([
-                'tipe'       => 'tukar',
-                'poin'       => $poin,
+    public function tukarPoin(
+        int $poin,
+        string $keterangan,
+        ?int $orderId = null,
+        ?string $eventKey = null
+    ): bool {
+        if ($poin <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($poin, $keterangan, $orderId, $eventKey) {
+            $pelanggan = static::lockForUpdate()->findOrFail($this->id);
+            if ($eventKey && PoinHistory::where('event_key', $eventKey)->exists()) {
+                return false;
+            }
+            if ($pelanggan->poin < $poin) {
+                return false;
+            }
+
+            $pelanggan->decrement('poin', $poin);
+            $pelanggan->poinHistories()->create([
+                'tipe' => 'tukar',
+                'poin' => $poin,
                 'keterangan' => $keterangan,
+                'order_id' => $orderId,
+                'event_key' => $eventKey,
             ]);
+            $this->refresh();
+
+            return true;
         });
-        
-        return true;
     }
 }

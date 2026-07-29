@@ -6,8 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class PoinHistory extends Model
 {
-    protected $fillable = ['pelanggan_id', 'order_id', 'tipe', 'poin', 'keterangan'];
+    protected $fillable = ['pelanggan_id', 'order_id', 'event_key', 'tipe', 'poin', 'keterangan'];
 
-    public function pelanggan() { return $this->belongsTo(Pelanggan::class); }
-    public function order()     { return $this->belongsTo(Order::class); }
+    public function pelanggan()
+    {
+        return $this->belongsTo(Pelanggan::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
 }

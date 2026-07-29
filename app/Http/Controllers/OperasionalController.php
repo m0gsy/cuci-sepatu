@@ -17,7 +17,7 @@ class OperasionalController extends Controller
         $operasionals = Operasional::with('user')
             ->whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bln)
-            ->when($request->kategori, fn($q) => $q->where('kategori', $request->kategori))
+            ->when($request->kategori, fn ($q) => $q->where('kategori', $request->kategori))
             ->latest('tanggal')
             ->paginate(20)->withQueryString();
 
@@ -42,13 +42,14 @@ class OperasionalController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama'      => 'required|string|max:200',
-            'kategori'  => 'required|in:bahan,utilitas,gaji,sewa,peralatan,lainnya',
-            'jumlah'    => 'required|integer|min:1',
-            'tanggal'   => 'required|date',
-            'catatan'   => 'nullable|string|max:500',
+            'nama' => 'required|string|max:200',
+            'kategori' => 'required|in:bahan,utilitas,gaji,sewa,peralatan,lainnya',
+            'jumlah' => 'required|integer|min:1',
+            'tanggal' => 'required|date',
+            'catatan' => 'nullable|string|max:500',
         ]);
         Operasional::create(array_merge($data, ['user_id' => auth()->id()]));
+
         return back()->with('success', "Biaya '{$data['nama']}' berhasil dicatat.");
     }
 
@@ -56,6 +57,7 @@ class OperasionalController extends Controller
     {
         $nama = $operasional->nama;
         $operasional->delete();
+
         return back()->with('success', "Biaya '{$nama}' berhasil dihapus.");
     }
 }

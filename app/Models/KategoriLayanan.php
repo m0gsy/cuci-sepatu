@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class KategoriLayanan extends Model
 {
     protected $table = 'kategori_layanans';
+
     protected $fillable = ['nama', 'aktif'];
+
     protected $casts = ['aktif' => 'boolean'];
 
     public function layanans()

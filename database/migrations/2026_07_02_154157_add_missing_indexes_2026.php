@@ -23,8 +23,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('pelanggans',  fn(Blueprint $t) => $t->dropIndex(['nama']));
-        Schema::table('operasionals', fn(Blueprint $t) => $t->dropIndex(['tanggal']));
-        Schema::table('hpp_layanans', fn(Blueprint $t) => $t->dropUnique('hpp_layanans_layanan_komponen_unique'));
+        Schema::table('pelanggans', fn (Blueprint $t) => $t->dropIndex(['nama']));
+        Schema::table('operasionals', fn (Blueprint $t) => $t->dropIndex(['tanggal']));
+        Schema::table('hpp_layanans', fn (Blueprint $t) => $t->dropUnique('hpp_layanans_layanan_komponen_unique'));
     }
 };

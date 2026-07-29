@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\RolePermission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,6 +11,7 @@ class KaryawanManagementTest extends TestCase
     use RefreshDatabase;
 
     protected User $owner;
+
     protected User $admin;
 
     protected function setUp(): void
@@ -70,7 +70,7 @@ class KaryawanManagementTest extends TestCase
 
         $response = $this->patch(route('karyawans.toggle', $karyawan));
         $response->assertRedirect();
-        
+
         $this->assertFalse($karyawan->fresh()->aktif);
     }
 
@@ -101,10 +101,10 @@ class KaryawanManagementTest extends TestCase
                 'admin' => [
                     'orders.manage',
                     'pelanggan',
-                    'lokasi'
+                    'lokasi',
                 ],
-                'cleaner' => []
-            ]
+                'cleaner' => [],
+            ],
         ];
 
         $response = $this->post(route('karyawans.permissions'), $permissionsData);

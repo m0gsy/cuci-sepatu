@@ -51,4 +51,14 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_inactive_user_with_existing_session_is_logged_out(): void
+    {
+        $user = User::factory()->create(['aktif' => false]);
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertRedirect('/login');
+        $this->assertGuest();
+    }
 }

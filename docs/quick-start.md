@@ -49,7 +49,7 @@ Sistem sudah menyertakan 5 layanan default (Cuci Biasa, Deep Clean, Premium, Rep
 **Hasil yang terjadi secara otomatis:**
 - Nomor order dibuat: contoh `ORD-20260703-0001`
 - Data pelanggan disimpan (atau diperbarui jika HP sudah terdaftar)
-- Notifikasi WhatsApp dikirim ke pelanggan (jika WABLAS_TOKEN sudah dikonfigurasi)
+- Notifikasi WhatsApp dikirim ke pelanggan jika kredensial Twilio dikonfigurasi.
 - Status order: **Diterima**
 
 ---
@@ -92,7 +92,7 @@ Jika sudah menggunakan metode `cash`, `lunas`, atau `qris` saat input order → 
 
 ## Langkah 7: Selesaikan Order
 
-Saat sepatu sudah diambil pelanggan, ubah status ke **Diambil** (selesai).
+Saat sepatu sudah diambil pelanggan, ubah status dari **Siap Diambil** ke **Selesai**.
 
 Status ini secara otomatis menandai pembayaran sebagai lunas jika belum lunas.
 
@@ -101,7 +101,7 @@ Status ini secara otomatis menandai pembayaran sebagai lunas jika belum lunas.
 ## Ringkasan Alur
 
 ```
-Login → Buat Order → Update Status (Dicuci → Siap Diambil) → Tandai Lunas → Selesai
+Login → Buat Order → Diproses → Siap Diambil → Selesai
 ```
 
 ---
@@ -112,7 +112,7 @@ Login → Buat Order → Update Status (Dicuci → Siap Diambil) → Tandai Luna
 - **Pelanggan baru otomatis:** Tidak perlu daftarkan pelanggan dulu — cukup masukkan nomor HP di form order, sistem akan membuat data pelanggan baru.
 - **Voucher:** Masukkan kode voucher di form order sebelum simpan untuk menerapkan diskon.
 - **Dashboard:** Cek dashboard setiap hari untuk melihat order terlambat, stok menipis, dan pendapatan hari ini.
-- **WA tidak terkirim:** Pastikan `WABLAS_TOKEN` sudah diisi di file `.env`, atau hubungi Owner.
+- **WA tidak terkirim:** Periksa `TWILIO_SID`, `TWILIO_AUTH_TOKEN`, dan `TWILIO_WHATSAPP_FROM` di `.env`, lalu pastikan queue worker aktif.
 
 ---
 

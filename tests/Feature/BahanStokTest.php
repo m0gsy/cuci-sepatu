@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Bahan;
+use App\Models\RolePermission;
 use App\Models\Stok;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,8 +20,8 @@ class BahanStokTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create(['aktif' => true, 'role' => 'admin']);
-        
-        \App\Models\RolePermission::create([
+
+        RolePermission::create([
             'role' => 'admin',
             'permission' => 'stok',
         ]);
@@ -79,7 +80,7 @@ class BahanStokTest extends TestCase
 
         $response->assertRedirect();
         $this->assertEquals(15.00, $stok->fresh()->stok_saat_ini);
-        
+
         $this->assertDatabaseHas('stok_mutasis', [
             'stok_id' => $stok->id,
             'tipe' => 'masuk',

@@ -13,6 +13,7 @@ class ReviewController extends Controller
     {
         $reviews = Review::with(['order.layanan', 'pelanggan'])
             ->latest()->paginate(20);
+
         return view('reviews.index', compact('reviews'));
     }
 
@@ -23,7 +24,7 @@ class ReviewController extends Controller
             return back()->with('error', 'Review sudah pernah diberikan.');
         }
 
-        if (!$order->isSudahSelesai()) {
+        if ($order->status !== 'selesai') {
             return back()->with('error', 'Order belum selesai.');
         }
 
@@ -33,10 +34,10 @@ class ReviewController extends Controller
         ]);
 
         Review::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'pelanggan_id' => $order->pelanggan_id,
-            'rating'       => $data['rating'],
-            'ulasan'       => $data['ulasan'] ?? null,
+            'rating' => $data['rating'],
+            'ulasan' => $data['ulasan'] ?? null,
         ]);
 
         return back()->with('success', 'Terima kasih atas ulasannya!');

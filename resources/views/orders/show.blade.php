@@ -184,7 +184,7 @@
     <div class="bg-white border border-gray-100 rounded-xl p-6" x-data="{ editLokasi: false }">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Lokasi sepatu</h2>
-            @if(!$order->isSudahSelesai() && $order->status !== 'batal')
+            @if(!$order->isSudahSelesai())
             <button @click="editLokasi = !editLokasi"
                     class="text-xs text-gray-400 hover:text-gray-700 border border-gray-200 px-3 py-1 rounded-lg">
                 {{ $order->lokasi ? 'Ubah lokasi' : 'Set lokasi' }}
@@ -310,7 +310,7 @@
             @endif
 
             <!-- Button Cancel / Batal -->
-            @if(!in_array($order->status, ['selesai', 'batal']))
+            @if($order->canTransitionTo('batal'))
             <form method="POST" action="{{ route('orders.status', $order) }}" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan order ini?')">
                 @csrf @method('PATCH')
                 <input type="hidden" name="status" value="batal">

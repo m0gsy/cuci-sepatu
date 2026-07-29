@@ -74,7 +74,7 @@ class PelangganTest extends TestCase
             'nama' => 'Hendra',
             'no_hp' => '08777888999',
         ]);
-        
+
         $pelanggan->poin = 100;
         $pelanggan->save();
 
@@ -96,7 +96,7 @@ class PelangganTest extends TestCase
             'nama' => 'Hendra',
             'no_hp' => '08777888999',
         ]);
-        
+
         $pelanggan->poin = 20;
         $pelanggan->save();
 
@@ -126,12 +126,12 @@ class PelangganTest extends TestCase
             'status' => 'selesai',
             'estimasi_selesai' => now()->addDays(2),
         ]);
-        
+
         Pembayaran::create([
             'order_id' => $order->id,
             'total' => 600000,
             'status' => 'selesai',
-            'metode' => 'tunai',
+            'metode' => 'cash',
         ]);
 
         // Recalculate tier

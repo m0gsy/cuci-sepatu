@@ -7,9 +7,11 @@ use App\Models\KategoriLayanan;
 use App\Models\Layanan;
 use App\Models\Lokasi;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\Pelanggan;
+use App\Models\Pembayaran;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class OrderManagementTest extends TestCase
@@ -17,10 +19,15 @@ class OrderManagementTest extends TestCase
     use RefreshDatabase;
 
     protected User $owner;
+
     protected User $admin;
+
     protected KategoriLayanan $category;
+
     protected JenisBarang $jenisBarang;
+
     protected Layanan $layanan;
+
     protected Lokasi $lokasi;
 
     protected function setUp(): void
@@ -72,13 +79,13 @@ class OrderManagementTest extends TestCase
                     'merek' => 'Nike',
                     'warna' => 'Hitam',
                     'kondisi' => 'Kotor sekali',
-                ]
-            ]
+                ],
+            ],
         ];
 
         $response = $this->post(route('orders.store'), $orderData);
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('orders', [
             'nama_pelanggan' => 'Reza',
             'no_hp' => '628987654321', // normalized by NormalizePhoneNumber middleware
@@ -87,7 +94,7 @@ class OrderManagementTest extends TestCase
 
         $order = Order::where('nama_pelanggan', 'Reza')->first();
         $this->assertNotNull($order);
-        
+
         $this->assertDatabaseHas('order_items', [
             'order_id' => $order->id,
             'layanan_id' => $this->layanan->id,
@@ -116,7 +123,7 @@ class OrderManagementTest extends TestCase
 
         // Update status from draft to menunggu_pembayaran
         $response = $this->patch(route('orders.status', $order), [
-            'status' => 'menunggu_pembayaran'
+            'status' => 'menunggu_pembayaran',
         ]);
 
         $response->assertRedirect();
@@ -151,7 +158,7 @@ class OrderManagementTest extends TestCase
         $this->actingAs($this->admin);
 
         // Create a customer with points
-        $pelanggan = \App\Models\Pelanggan::create([
+        $pelanggan = Pelanggan::create([
             'nama' => 'Reza',
             'no_hp' => '628987654321',
         ]);
@@ -173,8 +180,8 @@ class OrderManagementTest extends TestCase
                     'merek' => 'Nike',
                     'warna' => 'Hitam',
                     'kondisi' => 'Kotor sekali',
-                ]
-            ]
+                ],
+            ],
         ];
 
         $response = $this->post(route('orders.store'), $orderData);
@@ -204,11 +211,11 @@ class OrderManagementTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        $pelanggan = \App\Models\Pelanggan::create([
+        $pelanggan = Pelanggan::create([
             'nama' => 'Reza',
             'no_hp' => '628987654321',
         ]);
-        
+
         $order = Order::forceCreate([
             'no_order' => 'ORD-9999',
             'nama_pelanggan' => 'Reza',
@@ -227,13 +234,112 @@ class OrderManagementTest extends TestCase
 
         // Cancel the order
         $response = $this->patch(route('orders.status', $order), [
-            'status' => 'batal'
+            'status' => 'batal',
         ]);
 
         $response->assertRedirect();
-        
+
         // Assert points are refunded
         $this->assertEquals(50, $pelanggan->fresh()->poin);
+        $this->assertEquals(0, $order->fresh()->poin_digunakan);
+    }
+
+    public function test_repeated_submit_with_same_idempotency_key_creates_one_order(): void
+    {
+        $this->actingAs($this->admin);
+        $payload = [
+            'idempotency_key' => (string) Str::uuid(),
+            'nama_pelanggan' => 'Reza',
+            'no_hp' => '08987654321',
+            'estimasi_selesai' => now()->addDays(2)->format('Y-m-d\TH:i'),
+            'metode_bayar' => 'cash',
+            'items' => [[
+                'layanan_id' => $this->layanan->id,
+                'jenis_barang_id' => $this->jenisBarang->id,
+                'jumlah_pasang' => 1,
+            ]],
+        ];
+
+        $this->post(route('orders.store'), $payload)->assertRedirect();
+        $this->post(route('orders.store'), $payload)->assertRedirect();
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('pembayarans', 1);
+    }
+
+    public function test_status_transition_is_forward_only_and_points_are_awarded_once(): void
+    {
+        $pelanggan = Pelanggan::create(['nama' => 'Reza', 'no_hp' => '628987654321']);
+        $order = Order::create([
+            'user_id' => $this->admin->id,
+            'pelanggan_id' => $pelanggan->id,
+            'nama_pelanggan' => 'Reza',
+            'no_hp' => '628987654321',
+            'status' => 'siap_diambil',
+            'estimasi_selesai' => now(),
+        ]);
+        Pembayaran::create([
+            'order_id' => $order->id,
+            'total' => 100000,
+            'metode' => 'cash',
+            'status' => 'selesai',
+            'dibayar_pada' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->patch(route('orders.status', $order), ['status' => 'selesai'])
+            ->assertRedirect();
+
+        $this->assertEquals(10, $pelanggan->fresh()->poin);
+
+        $this->patch(route('orders.status', $order), ['status' => 'diproses'])
+            ->assertSessionHasErrors('status');
+        $this->assertEquals('selesai', $order->fresh()->status);
+        $this->assertEquals(10, $pelanggan->fresh()->poin);
+    }
+
+    public function test_edit_refunds_redeemed_points_to_original_customer(): void
+    {
+        $original = Pelanggan::create(['nama' => 'Lama', 'no_hp' => '628111111111']);
+        $original->forceFill(['poin' => 0])->save();
+        $replacement = Pelanggan::create(['nama' => 'Baru', 'no_hp' => '628222222222']);
+        $order = Order::create([
+            'user_id' => $this->admin->id,
+            'pelanggan_id' => $original->id,
+            'nama_pelanggan' => 'Lama',
+            'no_hp' => $original->no_hp,
+            'status' => 'draft',
+            'estimasi_selesai' => now()->addDay(),
+            'poin_digunakan' => 50,
+            'diskon_poin' => 5000,
+        ]);
+        $item = $order->items()->create([
+            'layanan_id' => $this->layanan->id,
+            'jenis_barang_id' => $this->jenisBarang->id,
+            'jumlah_pasang' => 1,
+            'harga_satuan' => 50000,
+            'hpp' => 0,
+        ]);
+        Pembayaran::create([
+            'order_id' => $order->id,
+            'total' => 45000,
+            'metode' => 'tempo',
+            'status' => 'belum_selesai',
+        ]);
+
+        $this->actingAs($this->admin)->put(route('orders.update', $order), [
+            'nama_pelanggan' => $replacement->nama,
+            'no_hp' => $replacement->no_hp,
+            'estimasi_selesai' => now()->addDays(2)->format('Y-m-d\TH:i'),
+            'items' => [[
+                'id' => $item->id,
+                'layanan_id' => $this->layanan->id,
+                'jenis_barang_id' => $this->jenisBarang->id,
+                'jumlah_pasang' => 1,
+            ]],
+        ])->assertRedirect();
+
+        $this->assertEquals(50, $original->fresh()->poin);
+        $this->assertEquals(0, $replacement->fresh()->poin);
     }
 }
-

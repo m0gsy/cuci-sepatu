@@ -17,17 +17,17 @@
     <meta property="og:title" content="@yield('og_title', 'StepShineWorks — Platform Manajemen Jasa Cuci Sepatu')">
     <meta property="og:description" content="@yield('og_description', 'Platform manajemen jasa cuci sepatu modern dengan tracking real-time dan notifikasi WhatsApp.')">
     <meta property="og:url" content="@yield('og_url', url()->current())">
-    <meta property="og:image" content="@yield('og_image', url('/og-image.png'))">
+    <meta property="og:image" content="@yield('og_image', url('/og-image.svg'))">
     <meta property="og:locale" content="id_ID">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('meta_title', 'StepShineWorks')">
     <meta name="twitter:description" content="@yield('meta_description', 'Platform manajemen jasa cuci sepatu modern.')">
-    <meta name="twitter:image" content="@yield('og_image', url('/og-image.png'))">
+    <meta name="twitter:image" content="@yield('og_image', url('/og-image.svg'))">
 
     <!-- Favicon & Manifest -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="#2563eb">
 
@@ -65,9 +65,6 @@
             <!-- Auth Links -->
             <div class="hidden md:flex items-center gap-3">
                 <a href="{{ route('login') }}" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors">Masuk</a>
-                @if(Route::has('register'))
-                <a href="{{ route('register') }}" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">Mulai Gratis</a>
-                @endif
             </div>
 
             <!-- Mobile Hamburger -->
@@ -95,9 +92,6 @@
         </div>
         <div class="px-4 pt-3 border-t border-gray-100 mt-2 flex gap-3">
             <a href="{{ route('login') }}" class="flex-1 text-center px-4 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium">Masuk</a>
-            @if(Route::has('register'))
-            <a href="{{ route('register') }}" class="flex-1 text-center px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Mulai Gratis</a>
-            @endif
         </div>
     </div>
 </nav>

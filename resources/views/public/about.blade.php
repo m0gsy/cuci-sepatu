@@ -128,7 +128,7 @@
             @php
             $services = [
                 'Manajemen order dengan detail lengkap',
-                'Tracking 7 tahap status per order',
+                'Tracking status real-time per order',
                 'Notifikasi WhatsApp otomatis ke pelanggan',
                 'Link status publik untuk pelanggan',
                 'Laporan pendapatan & profit/loss',

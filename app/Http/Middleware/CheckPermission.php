@@ -9,9 +9,10 @@ class CheckPermission
 {
     public function handle(Request $request, Closure $next, string $permission)
     {
-        if (!auth()->check() || !auth()->user()->hasPermission($permission)) {
+        if (! auth()->check() || ! auth()->user()->hasPermission($permission)) {
             abort(403, 'Akses tidak diizinkan.');
         }
+
         return $next($request);
     }
 }

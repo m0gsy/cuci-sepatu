@@ -21,6 +21,9 @@
 /storage/*.key
 /storage/pail
 /vendor
+/*.sqlite
+/cuci_sepatu
+/cuci_sepatu1
 Homestead.json
 Homestead.yaml
 Thumbs.db

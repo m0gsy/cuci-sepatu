@@ -2,15 +2,15 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
         // ── Voucher ───────────────────────────────────────────────────────────
-        if (!Schema::hasTable('vouchers')) {
+        if (! Schema::hasTable('vouchers')) {
             Schema::create('vouchers', function (Blueprint $table) {
                 $table->id();
                 $table->string('kode', 30)->unique();
@@ -27,7 +27,8 @@ return new class extends Migration
         }
 
         // ── Foto order (before / during / after) ──────────────────────────────
-        if (!Schema::hasTable('foto_orders')) {
+        // ── Review / rating pelanggan ─────────────────────────────────────────
+        if (! Schema::hasTable('foto_orders')) {
             Schema::create('foto_orders', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
@@ -38,8 +39,7 @@ return new class extends Migration
             });
         }
 
-        // ── Review / rating pelanggan ─────────────────────────────────────────
-        if (!Schema::hasTable('reviews')) {
+        if (! Schema::hasTable('reviews')) {
             Schema::create('reviews', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('order_id')->unique()->constrained('orders')->cascadeOnDelete();
@@ -52,33 +52,33 @@ return new class extends Migration
 
         // ── Orders: kolom detail sepatu + voucher ─────────────────────────────
         Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'merek')) {
+            if (! Schema::hasColumn('orders', 'merek')) {
                 $table->string('merek', 50)->nullable()->after('jenis_sepatu');
             }
-            if (!Schema::hasColumn('orders', 'warna')) {
+            if (! Schema::hasColumn('orders', 'warna')) {
                 $table->string('warna', 30)->nullable()->after('merek');
             }
-            if (!Schema::hasColumn('orders', 'kondisi')) {
+            if (! Schema::hasColumn('orders', 'kondisi')) {
                 $table->string('kondisi', 100)->nullable()->after('warna');
             }
-            if (!Schema::hasColumn('orders', 'voucher_id')) {
+            if (! Schema::hasColumn('orders', 'voucher_id')) {
                 $table->foreignId('voucher_id')->nullable()
-                      ->after('catatan_lokasi')
-                      ->constrained('vouchers')->nullOnDelete();
+                    ->after('catatan_lokasi')
+                    ->constrained('vouchers')->nullOnDelete();
             }
-            if (!Schema::hasColumn('orders', 'diskon')) {
+            if (! Schema::hasColumn('orders', 'diskon')) {
                 $table->integer('diskon')->default(0)->after('voucher_id');
             }
         });
 
         // ── Pelanggans: tier membership ───────────────────────────────────────
-        if (!Schema::hasColumn('pelanggans', 'tier')) {
+        if (! Schema::hasColumn('pelanggans', 'tier')) {
             Schema::table('pelanggans', function (Blueprint $table) {
                 $table->string('tier', 20)->default('reguler')->after('poin');
             });
         }
 
-        // ── Enum MySQL: status order 7 tahap + metode bayar cash/qris ─────────
+        // ── Enum MySQL: status order + metode bayar cash/qris ─────────
         $driver = DB::connection()->getDriverName();
         if ($driver === 'mysql') {
             DB::statement("ALTER TABLE orders MODIFY COLUMN status ENUM(
@@ -110,7 +110,7 @@ return new class extends Migration
         });
 
         if (Schema::hasColumn('pelanggans', 'tier')) {
-            Schema::table('pelanggans', fn($t) => $t->dropColumn('tier'));
+            Schema::table('pelanggans', fn ($t) => $t->dropColumn('tier'));
         }
 
         Schema::dropIfExists('vouchers');

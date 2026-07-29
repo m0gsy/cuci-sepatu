@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AdminOrOwner;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\OwnerOnly;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,10 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'admin'          => \App\Http\Middleware\AdminOnly::class,
-            'owner'          => \App\Http\Middleware\OwnerOnly::class,
-            'admin-or-owner' => \App\Http\Middleware\AdminOrOwner::class,
-            'permission'     => \App\Http\Middleware\CheckPermission::class,
+            'owner' => OwnerOnly::class,
+            'admin-or-owner' => AdminOrOwner::class,
+            'permission' => CheckPermission::class,
+            'active' => EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
