@@ -11,20 +11,10 @@
        class="text-xs border border-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
         Cetak nota ↗
     </a>
-    <form method="POST" action="{{ route('orders.invoice', $order) }}" class="inline">
-        @csrf
-        <button type="submit"
-                class="text-xs bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-hover transition-colors">
-            Kirim invoice WA
-        </button>
-    </form>
-    <form method="POST" action="{{ route('orders.wa', $order) }}" class="inline">
-        @csrf
-        <button type="submit"
-                class="text-xs border border-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            Kirim ulang WA
-        </button>
-    </form>
+    <a href="{{ route('orders.invoice', $order) }}"
+       class="text-xs bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-hover transition-colors">
+        Download Invoice (PDF)
+    </a>
     @endif
     <a href="{{ route('orders.index') }}" class="text-xs text-gray-400 hover:text-gray-700">← Kembali</a>
 @endsection

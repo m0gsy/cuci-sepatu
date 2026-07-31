@@ -71,7 +71,5 @@ class DatabaseSeeder extends Seeder
         foreach ($rewards as $r) {
             Reward::firstOrCreate(['nama' => $r['nama']], $r);
         }
-
-        $this->call(WaTemplateSeeder::class);
     }
 }

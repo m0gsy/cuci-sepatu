@@ -56,7 +56,7 @@
 
             <article>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">1. Ruang Lingkup Kebijakan</h2>
-                <p class="text-sm">Kebijakan pengembalian ini berlaku untuk biaya berlangganan atau pembayaran yang dilakukan kepada StepShineWorks untuk layanan platform manajemen cuci sepatu. Kebijakan ini <strong>tidak berlaku</strong> untuk data yang telah diproses melalui integrasi pihak ketiga (seperti pengiriman pesan WhatsApp).</p>
+                <p class="text-sm">Kebijakan pengembalian ini berlaku untuk biaya berlangganan atau pembayaran yang dilakukan kepada StepShineWorks untuk layanan platform manajemen cuci sepatu.</p>
             </article>
 
             <article>
@@ -87,7 +87,6 @@
                             <li>Biaya layanan yang telah digunakan sepenuhnya</li>
                             <li>Penghentian akun akibat pelanggaran Syarat dan Ketentuan</li>
                             <li>Ketidakpuasan yang disebabkan faktor di luar kendali kami (gangguan internet, dll.)</li>
-                            <li>Biaya layanan pihak ketiga yang sudah terpakai (biaya API WhatsApp, dll.)</li>
                         </ul>
                     </div>
                 </div>

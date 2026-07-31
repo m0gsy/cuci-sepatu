@@ -194,19 +194,28 @@
         @endif
 
         {{-- Footer --}}
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center">
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center space-y-2">
+            <div>
+                <a href="{{ route('status.invoice', $order->token_publik) }}"
+                   class="inline-flex items-center gap-1 text-xs font-medium bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-hover transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download Invoice (PDF)
+                </a>
+            </div>
             <p class="text-xs text-gray-500">
                 Terakhir diperbarui: {{ now()->isoFormat('D MMM Y, HH:mm') }}
             </p>
             <button onclick="location.reload()"
-                    class="mt-2 text-xs text-gray-600 hover:text-gray-900 underline">
+                    class="text-xs text-gray-600 hover:text-gray-900 underline">
                 Refresh status
             </button>
         </div>
     </div>
 
     <p class="text-center text-xs text-gray-400 mt-4">
-        Ada pertanyaan? <a href="https://wa.me/6281958800679?text=Halo%20Step%20Shine%20Works%2C%20saya%20ingin%20bertanya%20tentang%20order%20{{ $order->no_order }}" target="_blank" class="text-brand hover:underline font-medium">Hubungi kami via WhatsApp</a>
+        Ada pertanyaan? Hubungi customer service Step Shine Works di 0819-5880-0679
     </p>
 </div>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

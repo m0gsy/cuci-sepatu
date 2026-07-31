@@ -28,7 +28,6 @@ class ProductionPreflight extends Command
             ['Session', ! in_array(config('session.driver'), ['array', 'file'], true), 'Use a shared session store'],
             ['Secure cookie', config('session.secure') === true, 'SESSION_SECURE_COOKIE must be true'],
             ['Encrypted session', config('session.encrypt') === true, 'SESSION_ENCRYPT must be true'],
-            ['Twilio', $this->twilioConfigured(), 'Twilio SID, token, and WhatsApp sender are required'],
             ['Mail', $this->mailConfigured(), 'A real mailer, sender, and admin address are required'],
             ['Build assets', $this->buildAssetsExist(), 'Build manifest or an asset is missing'],
             ['Writable storage', is_writable(storage_path()) && is_writable(base_path('bootstrap/cache')), 'Storage paths are not writable'],
@@ -91,13 +90,6 @@ class ProductionPreflight extends Command
         } catch (\Throwable) {
             return false;
         }
-    }
-
-    private function twilioConfigured(): bool
-    {
-        return str_starts_with((string) config('services.twilio.sid'), 'AC')
-            && strlen((string) config('services.twilio.token')) >= 20
-            && str_starts_with((string) config('services.twilio.from'), '+');
     }
 
     private function mailConfigured(): bool

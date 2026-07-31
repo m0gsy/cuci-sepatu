@@ -72,7 +72,6 @@
                         'vouchers'      => ['route' => 'vouchers.index',   'label' => 'Voucher',        'match' => 'vouchers.*'],
                         'rewards'       => ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
                         'operasional'   => ['route' => 'operasional.index','label' => 'Operasional',    'match' => 'operasional.*'],
-                        'wa_template'   => ['route' => 'wa-templates.index','label' => 'Template WA',  'match' => 'wa-templates.*'],
                     ];
 
                     // Daftar order selalu ada untuk semua

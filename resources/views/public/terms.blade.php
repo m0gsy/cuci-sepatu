@@ -56,7 +56,7 @@
 
             <article>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">1. Deskripsi Layanan</h2>
-                <p class="text-sm">StepShineWorks adalah platform manajemen berbasis web yang dirancang untuk membantu pelaku usaha jasa cuci sepatu mengelola operasional bisnis mereka, termasuk namun tidak terbatas pada: manajemen order, tracking status, notifikasi WhatsApp, laporan bisnis, manajemen pelanggan, stok bahan, dan karyawan.</p>
+                <p class="text-sm">StepShineWorks adalah platform manajemen berbasis web yang dirancang untuk membantu pelaku usaha jasa cuci sepatu mengelola operasional bisnis mereka, termasuk namun tidak terbatas pada: manajemen order, tracking status, invoice PDF, laporan bisnis, manajemen pelanggan, stok bahan, dan karyawan.</p>
             </article>
 
             <article>
@@ -102,15 +102,7 @@
                 </ul>
             </article>
 
-            <article>
-                <h2 class="text-xl font-bold text-gray-900 mb-4">6. Integrasi WhatsApp Business API</h2>
-                <p class="text-sm mb-3">Fitur notifikasi menggunakan Twilio WhatsApp API. Dengan menggunakan fitur ini, Anda menyatakan bahwa:</p>
-                <ul class="list-disc list-inside space-y-1 text-sm pl-2">
-                    <li>Anda telah mendapatkan persetujuan dari penerima pesan untuk menerima komunikasi bisnis</li>
-                    <li>Pesan yang dikirim bersifat transaksional dan relevan dengan layanan yang dipesan pelanggan</li>
-                    <li>Anda mematuhi <a href="https://www.whatsapp.com/legal/business-policy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Bisnis WhatsApp</a></li>
-                </ul>
-            </article>
+
 
             <article>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">7. Kepemilikan Konten &amp; Kekayaan Intelektual</h2>

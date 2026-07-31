@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Middleware\NormalizePhoneNumber;
-use App\Jobs\KirimWaJob;
 use App\Models\JenisBarang;
 use App\Models\Layanan;
 use App\Models\Lokasi;
@@ -12,7 +11,6 @@ use App\Models\Pelanggan;
 use App\Models\Pembayaran;
 use App\Models\Voucher;
 use App\Services\StockAutomationService;
-use App\Services\WhatsappService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -23,7 +21,6 @@ use Illuminate\Validation\ValidationException;
 class OrderController extends Controller
 {
     public function __construct(
-        protected WhatsappService $wa,
         protected StockAutomationService $stockAutomation
     ) {}
 
@@ -217,9 +214,6 @@ class OrderController extends Controller
         }
 
         $order->load(['items.layanan', 'pembayaran', 'lokasi']);
-        if ($created) {
-            KirimWaJob::dispatch($order->no_hp, $this->wa->pesanOrderMasuk($order));
-        }
 
         $redirect = redirect()->route('orders.show', $order)
             ->with('success', $created
@@ -484,11 +478,6 @@ class OrderController extends Controller
         }, 3);
 
         $order->refresh();
-        if ($data['status'] === 'diproses' && $oldStatus !== 'diproses') {
-            KirimWaJob::dispatch($order->no_hp, $this->wa->pesanMulaiDicuci($order));
-        } elseif ($data['status'] === 'siap_diambil' && $oldStatus !== 'siap_diambil') {
-            KirimWaJob::dispatch($order->no_hp, $this->wa->pesanOrderSelesai($order));
-        }
 
         return back()->with('success', 'Status diperbarui ke '.ucfirst(str_replace('_', ' ', $data['status'])).'.');
     }
@@ -521,29 +510,13 @@ class OrderController extends Controller
         return back()->with('success', "Lokasi diperbarui ke {$lokasiNama}.");
     }
 
-    public function kirimUlangWa(Order $order)
+    public function downloadInvoice(Order $order)
     {
-        $order->load('items.layanan', 'pembayaran', 'lokasi', 'pelanggan');
-        $pesan = $order->status === 'siap_diambil'
-            ? $this->wa->pesanOrderSelesai($order)
-            : $this->wa->pesanOrderMasuk($order);
-        $terkirim = $this->wa->kirim($order->no_hp, $pesan);
+        $order->load(['items.layanan', 'items.jenisBarang', 'pembayaran', 'user', 'voucher', 'pelanggan', 'lokasi']);
+        $pdf = Pdf::loadView('pdf.invoice', compact('order'))
+            ->setPaper('a4', 'portrait');
 
-        return back()->with(
-            $terkirim ? 'success' : 'error',
-            $terkirim ? "WA terkirim ke {$order->no_hp}." : 'Gagal kirim WA.'
-        );
-    }
-
-    public function kirimInvoice(Order $order)
-    {
-        $order->load('items.layanan', 'pembayaran', 'user');
-        $terkirim = $this->wa->kirimInvoiceLink($order);
-
-        return back()->with(
-            $terkirim ? 'success' : 'error',
-            $terkirim ? "Invoice WA terkirim ke {$order->no_hp}." : 'Gagal kirim invoice WA.'
-        );
+        return $pdf->download("invoice-{$order->no_order}.pdf");
     }
 
     public function cetakNota(Order $order)

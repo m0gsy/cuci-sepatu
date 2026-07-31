@@ -7,7 +7,7 @@
 
     <!-- Primary SEO -->
     <title>@yield('meta_title', 'StepShineWorks — Platform Manajemen Jasa Cuci Sepatu')</title>
-    <meta name="description" content="@yield('meta_description', 'StepShineWorks adalah platform manajemen jasa cuci sepatu modern. Kelola order, tracking real-time, notifikasi WhatsApp otomatis, dan laporan bisnis.')">
+    <meta name="description" content="@yield('meta_description', 'StepShineWorks adalah platform manajemen jasa cuci sepatu modern. Kelola order, tracking real-time, invoice PDF, dan laporan bisnis.')">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="StepShineWorks">
     <meta property="og:title" content="@yield('og_title', 'StepShineWorks — Platform Manajemen Jasa Cuci Sepatu')">
-    <meta property="og:description" content="@yield('og_description', 'Platform manajemen jasa cuci sepatu modern dengan tracking real-time dan notifikasi WhatsApp.')">
+    <meta property="og:description" content="@yield('og_description', 'Platform manajemen jasa cuci sepatu modern dengan tracking real-time dan invoice PDF.')">
     <meta property="og:url" content="@yield('og_url', url()->current())">
     <meta property="og:image" content="@yield('og_image', url('/og-image.svg'))">
     <meta property="og:locale" content="id_ID">
@@ -115,7 +115,7 @@
                     <span class="font-bold text-white">StepShineWorks</span>
                 </a>
                 <p class="text-sm text-gray-400 leading-relaxed max-w-xs">
-                    Platform manajemen jasa cuci sepatu modern. Kelola order, tracking real-time, dan notifikasi WhatsApp otomatis untuk bisnis Anda.
+                    Platform manajemen jasa cuci sepatu modern. Kelola order, tracking real-time, cetak & download invoice PDF untuk bisnis Anda.
                 </p>
                 <div class="mt-5 space-y-1.5">
                     <a href="mailto:support@stepshineworks.store" class="block text-sm text-gray-400 hover:text-white transition-colors">

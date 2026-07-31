@@ -1,10 +1,10 @@
 @extends('layouts.public')
 
 @section('meta_title', 'StepShineWorks — Platform Manajemen Jasa Cuci Sepatu')
-@section('meta_description', 'Kelola bisnis cuci sepatu Anda dengan mudah. Order management, tracking status real-time, notifikasi WhatsApp otomatis, laporan profit/loss, dan loyalitas pelanggan.')
+@section('meta_description', 'Kelola bisnis cuci sepatu Anda dengan mudah. Order management, tracking status real-time, invoice PDF, laporan profit/loss, dan loyalitas pelanggan.')
 @section('canonical', url('/'))
 @section('og_title', 'StepShineWorks — Platform Manajemen Jasa Cuci Sepatu')
-@section('og_description', 'Sistem manajemen jasa cuci sepatu terlengkap. Tracking real-time, WA otomatis, laporan bisnis.')
+@section('og_description', 'Sistem manajemen jasa cuci sepatu terlengkap. Tracking real-time, cetak invoice PDF, laporan bisnis.')
 @section('og_url', url('/'))
 
 @section('schema')
@@ -45,7 +45,7 @@
       "name": "StepShineWorks",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
-      "description": "Platform manajemen jasa cuci sepatu modern dengan fitur order management, tracking real-time, dan notifikasi WhatsApp.",
+      "description": "Platform manajemen jasa cuci sepatu modern dengan fitur order management, tracking real-time, dan cetak invoice PDF.",
       "url": "https://stepshineworks.store",
       "offers": {
         "@type": "Offer",
@@ -72,7 +72,7 @@
                 Manajemen Jasa Cuci Sepatu, Lebih Mudah &amp; Profesional
             </h1>
             <p class="text-xl text-blue-100 leading-relaxed mb-10 max-w-2xl" style="text-wrap: pretty">
-                Kelola order, pantau status real-time, kirim notifikasi WhatsApp otomatis ke pelanggan, dan analisis bisnis Anda — semua dalam satu sistem.
+                Kelola order, pantau status real-time, download invoice PDF untuk pelanggan, dan analisis bisnis Anda — semua dalam satu sistem.
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
                 <a href="{{ route('contact.show') }}"
@@ -133,9 +133,9 @@
                     'color' => 'bg-green-50 text-green-600',
                 ],
                 [
-                    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>',
-                    'title' => 'Notifikasi WhatsApp Otomatis',
-                    'desc' => 'Kirim pesan WA otomatis saat order dibuat, mulai diproses, dan siap diambil — tanpa perlu kirim manual.',
+                    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>',
+                    'title' => 'Download Invoice PDF',
+                    'desc' => 'Download dan cetak invoice PDF resmi atau nota termal untuk pelanggan dengan detail transaksi lengkap.',
                     'color' => 'bg-emerald-50 text-emerald-600',
                 ],
                 [
@@ -186,8 +186,8 @@
             @php
             $steps = [
                 ['num' => '1', 'title' => 'Terima Order', 'desc' => 'Catat pesanan pelanggan: nama, kontak, jenis sepatu, layanan, dan metode pembayaran. Nomor order otomatis dibuat.'],
-                ['num' => '2', 'title' => 'Proses &amp; Update Status', 'desc' => 'Update status order dari draft, menunggu pembayaran, diproses, hingga siap diambil. Notifikasi WA terkirim otomatis pada tahap penting.'],
-                ['num' => '3', 'title' => 'Kirim Invoice &amp; Laporan', 'desc' => 'Kirim invoice via WA, cetak nota, dan pantau laporan bisnis harian, mingguan, atau bulanan secara real-time.'],
+                ['num' => '2', 'title' => 'Proses &amp; Update Status', 'desc' => 'Update status order dari draft, menunggu pembayaran, diproses, hingga siap diambil secara real-time.'],
+                ['num' => '3', 'title' => 'Invoice PDF &amp; Laporan', 'desc' => 'Cetak &amp; download invoice PDF, cetak nota, dan pantau laporan bisnis harian, mingguan, atau bulanan secara real-time.'],
             ];
             @endphp
 
@@ -214,9 +214,9 @@
 
         @php
         $faqs = [
-            ['q' => 'Apa itu StepShineWorks?', 'a' => 'StepShineWorks adalah platform manajemen berbasis web khusus untuk bisnis jasa cuci sepatu. Membantu Anda mengelola order, tracking status, notifikasi pelanggan via WhatsApp, dan analitik bisnis dalam satu sistem terintegrasi.'],
+            ['q' => 'Apa itu StepShineWorks?', 'a' => 'StepShineWorks adalah platform manajemen berbasis web khusus untuk bisnis jasa cuci sepatu. Membantu Anda mengelola order, tracking status, download invoice PDF, dan analitik bisnis dalam satu sistem terintegrasi.'],
             ['q' => 'Apakah pelanggan perlu login untuk melacak order?', 'a' => 'Tidak. Pelanggan dapat membuka link tracking publik yang unik untuk order mereka.'],
-            ['q' => 'Bagaimana notifikasi WhatsApp bekerja?', 'a' => 'Sistem mengirim pesan WhatsApp otomatis saat order dibuat, mulai diproses, dan siap diambil. Template pesan dapat disesuaikan oleh owner.'],
+            ['q' => 'Bagaimana pelanggan mendapatkan invoice?', 'a' => 'Pelanggan dapat langsung mengunduh invoice dalam bentuk file PDF dari halaman tracking status publik mereka atau meminta kasir mencetakkannya.'],
             ['q' => 'Bagaimana akses data bisnis dibatasi?', 'a' => 'Akses dashboard memerlukan login, akun aktif, serta role dan permission yang sesuai. Keamanan jaringan dan penyimpanan server mengikuti konfigurasi lingkungan deployment.'],
             ['q' => 'Bagaimana cara memulai?', 'a' => 'Hubungi kami di support@stepshineworks.store untuk mendapatkan panduan setup awal bisnis Anda.'],
         ];

@@ -60,15 +60,15 @@
                         Kami memahami tantangan yang dihadapi pemilik usaha shoe care: mencatat order manual yang rawan kelupaan, pelanggan yang bertanya-tanya soal status sepatu mereka, hingga sulitnya memantau kinerja bisnis secara akurat.
                     </p>
                     <p>
-                        Dengan StepShineWorks, semua itu bisa diselesaikan dalam satu sistem terintegrasi — dari manajemen order hingga notifikasi WhatsApp otomatis ke pelanggan.
+                        Dengan StepShineWorks, semua itu bisa diselesaikan dalam satu sistem terintegrasi — dari manajemen order hingga invoice PDF profesional untuk pelanggan.
                     </p>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 @php
                 $stats = [
-                    ['value' => '7', 'label' => 'Tahap tracking order', 'color' => 'bg-blue-50 text-blue-700'],
-                    ['value' => 'WA', 'label' => 'Notifikasi otomatis', 'color' => 'bg-green-50 text-green-700'],
+                    ['value' => '5', 'label' => 'Tahap tracking order', 'color' => 'bg-blue-50 text-blue-700'],
+                    ['value' => 'PDF', 'label' => 'Invoice & Nota', 'color' => 'bg-green-50 text-green-700'],
                     ['value' => '∞', 'label' => 'Data order tersimpan', 'color' => 'bg-purple-50 text-purple-700'],
                     ['value' => '24/7', 'label' => 'Akses dari mana saja', 'color' => 'bg-amber-50 text-amber-700'],
                 ];
@@ -129,7 +129,7 @@
             $services = [
                 'Manajemen order dengan detail lengkap',
                 'Tracking status real-time per order',
-                'Notifikasi WhatsApp otomatis ke pelanggan',
+                'Cetak & download invoice PDF resmi',
                 'Link status publik untuk pelanggan',
                 'Laporan pendapatan & profit/loss',
                 'HPP (Harga Pokok Produksi) per layanan',
@@ -138,7 +138,7 @@
                 'Pemantauan stok bahan cuci',
                 'Catatan biaya operasional',
                 'Manajemen karyawan & hak akses',
-                'Template pesan WhatsApp kustomisasi',
+                'Cetak nota termal kasir',
             ];
             @endphp
 
@@ -167,7 +167,7 @@
             @php
             $reasons = [
                 ['title' => 'Dibuat Khusus untuk Shoe Care', 'desc' => 'Bukan software umum yang dimodifikasi. StepShineWorks dirancang dari awal untuk kebutuhan bisnis cuci sepatu, dengan alur kerja yang sesuai dengan operasional nyata.'],
-                ['title' => 'Notifikasi WhatsApp Real-Time', 'desc' => 'Tidak perlu kirim pesan manual. Sistem mengirim notifikasi ke pelanggan secara otomatis di setiap perubahan status order.'],
+                ['title' => 'Invoice & Tracking Real-Time', 'desc' => 'Pelanggan dapat memantau status pengerjaan sepatu kapan saja dan mengunduh invoice PDF transparan secara mandiri.'],
                 ['title' => 'Mudah Digunakan', 'desc' => 'Antarmuka yang intuitif dan ramah pengguna. Karyawan baru pun bisa langsung menggunakannya tanpa pelatihan panjang.'],
                 ['title' => 'Laporan Bisnis Akurat', 'desc' => 'Pantau kesehatan bisnis Anda dengan laporan pendapatan, profit/loss, HPP, dan operasional yang akurat dan real-time.'],
             ];

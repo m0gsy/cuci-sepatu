@@ -70,7 +70,6 @@
                     <li>Data pelanggan bisnis Anda (nama, nomor telepon, alamat)</li>
                     <li>Informasi order dan layanan</li>
                     <li>Data transaksi dan pembayaran</li>
-                    <li>Riwayat komunikasi WhatsApp yang dikirim via platform</li>
                 </ul>
 
                 <h3 class="text-base font-semibold text-gray-800 mb-2">c. Data Teknis</h3>
@@ -97,7 +96,7 @@
                 <ul class="list-disc list-inside space-y-2 text-sm pl-2">
                     <li>Menyediakan dan mengoperasikan layanan platform</li>
                     <li>Memproses otentikasi dan keamanan akun</li>
-                    <li>Mengirim notifikasi WhatsApp kepada pelanggan bisnis Anda melalui integrasi API</li>
+                    <li>Memproses invoice dan riwayat transaksi bisnis Anda</li>
                     <li>Menganalisis penggunaan untuk peningkatan layanan</li>
                     <li>Merespons pertanyaan dan dukungan teknis</li>
                     <li>Memenuhi kewajiban hukum yang berlaku</li>
@@ -119,12 +118,8 @@
                 <p class="text-sm mb-3">Platform kami menggunakan layanan pihak ketiga berikut:</p>
                 <div class="space-y-3">
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="font-semibold text-sm text-gray-900">Twilio WhatsApp API</p>
-                        <p class="text-xs text-gray-600 mt-1">Digunakan untuk mengirim notifikasi WhatsApp otomatis kepada pelanggan bisnis Anda. Nomor telepon dan isi pesan diproses oleh Twilio dan WhatsApp untuk pengiriman. Penggunaan data tunduk pada <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Privasi Twilio</a> dan <a href="https://www.whatsapp.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kebijakan Privasi WhatsApp</a>.</p>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="font-semibold text-sm text-gray-900">Infrastruktur Hosting</p>
-                        <p class="text-xs text-gray-600 mt-1">Data disimpan pada infrastruktur yang dikonfigurasi oleh operator layanan. Lokasi penyimpanan, retensi backup, dan kontrol jaringan mengikuti lingkungan deployment yang digunakan.</p>
+                        <p class="font-semibold text-sm text-gray-900">Infrastruktur Hosting &amp; PDF Rendering</p>
+                        <p class="text-xs text-gray-600 mt-1">Data disimpan pada infrastruktur server dan diproses secara internal untuk pencetakan dokumen PDF nota/invoice. Lokasi penyimpanan, retensi backup, dan kontrol jaringan mengikuti lingkungan deployment yang digunakan.</p>
                     </div>
                 </div>
             </article>
@@ -144,7 +139,7 @@
                 <h2 class="text-xl font-bold text-gray-900 mb-4">7. Berbagi Informasi</h2>
                 <p class="text-sm mb-3">Kami <strong>tidak menjual</strong> data Anda kepada pihak ketiga. Kami hanya berbagi data dalam kondisi:</p>
                 <ul class="list-disc list-inside space-y-1 text-sm pl-2">
-                    <li>Diperlukan untuk penyediaan layanan (seperti pengiriman notifikasi via WhatsApp API)</li>
+                    <li>Diperlukan untuk penyediaan layanan platform</li>
                     <li>Diwajibkan oleh peraturan hukum yang berlaku di Indonesia</li>
                     <li>Dengan persetujuan eksplisit Anda</li>
                 </ul>

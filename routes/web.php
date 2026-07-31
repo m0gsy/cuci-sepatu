@@ -19,7 +19,6 @@ use App\Http\Controllers\RewardController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\VoucherController;
-use App\Http\Controllers\WaTemplateController;
 use App\Http\Middleware\NormalizePhoneNumber;
 use Illuminate\Support\Facades\Route;
 
@@ -32,8 +31,9 @@ Route::get('/privacy-policy', [PublicPageController::class, 'privacy'])->name('p
 Route::get('/terms', [PublicPageController::class, 'terms'])->name('terms');
 Route::get('/refund-policy', [PublicPageController::class, 'refund'])->name('refund');
 
-// Publik — order tracking & review
+// Publik — order tracking, review & invoice download
 Route::get('/status/{token}', [StatusController::class, 'show'])->middleware('throttle:30,1')->name('status.order');
+Route::get('/status/{token}/invoice', [StatusController::class, 'downloadInvoice'])->middleware('throttle:30,1')->name('status.invoice');
 Route::post('orders/{order:token_publik}/review', [ReviewController::class, 'store'])->middleware('throttle:5,60')->name('orders.review.store');
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -58,8 +58,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('orders/{order}/lokasi', [OrderController::class, 'updateLokasi'])->middleware('permission:lokasi')->name('orders.lokasi');
     Route::patch('orders/{order}/tandai-lunas', [OrderController::class, 'tandaiLunas'])->middleware('permission:orders.manage')->name('orders.lunas');
     Route::get('orders/{order}/nota', [OrderController::class, 'cetakNota'])->middleware('permission:orders.manage')->name('orders.nota');
-    Route::post('orders/{order}/kirim-wa', [OrderController::class, 'kirimUlangWa'])->middleware('permission:orders.manage')->name('orders.wa');
-    Route::post('orders/{order}/kirim-invoice', [OrderController::class, 'kirimInvoice'])->middleware('permission:orders.manage')->name('orders.invoice');
+    Route::get('orders/{order}/invoice', [OrderController::class, 'downloadInvoice'])->middleware('permission:orders.manage')->name('orders.invoice');
     // ── PELANGGAN ─────────────────────────────────────────────────────────
     Route::get('pelanggans', [PelangganController::class, 'index'])->middleware('permission:pelanggan')->name('pelanggans.index');
     Route::get('pelanggans/cari', [PelangganController::class, 'cari'])->middleware(['permission:orders.manage', 'throttle:60,1'])->name('pelanggans.cari');
@@ -144,11 +143,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('operasional', [OperasionalController::class, 'store'])->middleware('permission:operasional')->name('operasional.store');
     Route::delete('operasional/{operasional}', [OperasionalController::class, 'destroy'])->middleware('permission:operasional')->name('operasional.destroy');
 
-    // ── TEMPLATE WA ───────────────────────────────────────────────────────
-    Route::get('wa-templates', [WaTemplateController::class, 'index'])->middleware('permission:wa_template')->name('wa-templates.index');
-    Route::get('wa-templates/{waTemplate}/edit', [WaTemplateController::class, 'edit'])->middleware('permission:wa_template')->name('wa-templates.edit');
-    Route::patch('wa-templates/{waTemplate}', [WaTemplateController::class, 'update'])->middleware('permission:wa_template')->name('wa-templates.update');
-    Route::post('wa-templates/{waTemplate}/reset', [WaTemplateController::class, 'reset'])->middleware('permission:wa_template')->name('wa-templates.reset');
+
 
     // ── KARYAWAN (owner only) ─────────────────────────────────────────────
     Route::get('karyawans', [KaryawanController::class, 'index'])->middleware('owner')->name('karyawans.index');
