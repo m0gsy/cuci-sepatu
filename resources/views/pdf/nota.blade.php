@@ -172,6 +172,12 @@ table.calc td:last-child { text-align: right; }
     </span>
 </div>
 
+<div class="center" style="margin: 2mm 0; font-size: 9px; color: #334155; background: #f8fafc; padding: 2mm; border-radius: 4px; border: 1px solid #e2e8f0;">
+    <div style="font-weight: bold;">Pembayaran Transfer BCA:</div>
+    <div style="font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">0661625936</div>
+    <div>a.n. Muhammad Irfan Kanugrahan</div>
+</div>
+
 <hr class="divider">
 
 <div class="footer">

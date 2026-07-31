@@ -312,6 +312,15 @@
                 </div>
                 @endif
             </div>
+            <div class="info-box" style="margin-top: 10px;">
+                <div class="info-box-title">Rekening Pembayaran Bank</div>
+                <div style="font-size: 11px; color: #0f172a; font-weight: bold;">
+                    BCA: 0661625936
+                </div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 2px;">
+                    a.n. Muhammad Irfan Kanugrahan
+                </div>
+            </div>
         </td>
         <td class="col-right">
             <table class="calc-table">
