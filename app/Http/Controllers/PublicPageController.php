@@ -6,6 +6,7 @@ use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class PublicPageController extends Controller
 {
@@ -54,6 +55,11 @@ class PublicPageController extends Controller
 
     public function contactMessages()
     {
+        if (! Schema::hasTable('contact_messages')) {
+            $messages = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+            return view('contact-messages.index', compact('messages'));
+        }
+
         $messages = ContactMessage::latest()->paginate(50);
 
         return view('contact-messages.index', compact('messages'));
