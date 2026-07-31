@@ -58,7 +58,6 @@
                         ['route' => 'vouchers.index',   'label' => 'Voucher',        'match' => 'vouchers.*'],
                         ['route' => 'reviews.index',    'label' => 'Ulasan',         'match' => 'reviews.*'],
                         ['route' => 'rewards.index',    'label' => 'Reward & Poin',  'match' => 'rewards.*'],
-                        ['route' => 'wa-templates.index','label' => 'Template WA',   'match' => 'wa-templates.*'],
                     ]);
                 } else {
                     // Admin/Cleaner: tampilkan menu sesuai permission
